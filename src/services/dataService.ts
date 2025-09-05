@@ -1,0 +1,417 @@
+import { Incidente, Ubicacion, Maquina, Repuesto, EstadisticasUbicacion, EstadisticasRepuesto, Filtros } from '../types';
+
+class DataService {
+  private readonly STORAGE_KEYS = {
+    INCIDENTES: 'incidentes_data',
+    UBICACIONES: 'ubicaciones_data',
+    MAQUINAS: 'maquinas_data',
+    REPUESTOS: 'repuestos_data'
+  };
+
+  // Datos reales de impresoras
+  private getDatosIniciales() {
+    return {
+      ubicaciones: [
+        {
+          id: '1',
+          nombre: 'Mercado Central',
+          direccion: 'Mercado Central, Buenos Aires',
+          latitud: -34.7082840,
+          longitud: -58.4888790,
+          empresa: 'Diarco'
+        },
+        {
+          id: '2',
+          nombre: 'Esteban Echeverría',
+          direccion: 'Esteban Echeverría, Buenos Aires',
+          latitud: -34.7762620,
+          longitud: -58.4720910,
+          empresa: 'Catter meat S.A'
+        },
+        {
+          id: '3',
+          nombre: 'ADM Agro',
+          direccion: 'Buenos Aires',
+          latitud: -34.7678330,
+          longitud: -58.3792530,
+          empresa: 'ADM Agro S.R.L'
+        },
+        {
+          id: '4',
+          nombre: 'DHL Excel',
+          direccion: 'Buenos Aires',
+          latitud: -34.6722460,
+          longitud: -58.4363080,
+          empresa: 'DHL Excel'
+        },
+        {
+          id: '5',
+          nombre: 'Dia',
+          direccion: 'Buenos Aires',
+          latitud: -34.8372310,
+          longitud: -58.4108440,
+          empresa: 'Dia'
+        }
+      ] as Ubicacion[],
+      maquinas: [
+        { id: '1', nombre: 'Samsung 4020', tipo: 'Impresora', modelo: '4020', ubicacionId: '1', estado: 'operativa' },
+        { id: '2', nombre: 'Lexmark x656', tipo: 'Impresora', modelo: 'x656', ubicacionId: '2', estado: 'operativa' },
+        { id: '3', nombre: 'Samsung CLP 680N', tipo: 'Impresora', modelo: 'CLP 680N', ubicacionId: '3', estado: 'operativa' },
+        { id: '4', nombre: 'Samsung Mono 4072', tipo: 'Impresora', modelo: 'Mono 4072', ubicacionId: '4', estado: 'operativa' },
+        { id: '5', nombre: 'HP e52645dn', tipo: 'Impresora', modelo: 'e52645dn', ubicacionId: '5', estado: 'operativa' }
+      ] as Maquina[],
+      repuestos: [
+        { id: '1', nombre: 'Fusor', codigo: 'FUS-001', categoria: 'Componentes', precio: 0 },
+        { id: '2', nombre: 'Pickup', codigo: 'PIC-001', categoria: 'Componentes', precio: 0 },
+        { id: '3', nombre: 'Retard', codigo: 'RET-001', categoria: 'Componentes', precio: 0 },
+        { id: '4', nombre: 'Clutch', codigo: 'CLU-001', categoria: 'Componentes', precio: 0 },
+        { id: '5', nombre: 'Low', codigo: 'LOW-001', categoria: 'Componentes', precio: 0 },
+        { id: '6', nombre: 'Puerta Trasera', codigo: 'PUE-001', categoria: 'Componentes', precio: 0 },
+        { id: '7', nombre: 'Tapa Delantera Verde', codigo: 'TAP-001', categoria: 'Componentes', precio: 0 },
+        { id: '8', nombre: 'Switch', codigo: 'SWI-001', categoria: 'Componentes', precio: 0 },
+        { id: '9', nombre: 'Recogedor de Hojas', codigo: 'REC-001', categoria: 'Componentes', precio: 0 },
+        { id: '10', nombre: 'Controller', codigo: 'CON-001', categoria: 'Componentes', precio: 0 },
+        { id: '11', nombre: 'Cartucho Magenta', codigo: 'CAR-001', categoria: 'Consumibles', precio: 0 },
+        { id: '12', nombre: 'Rubber', codigo: 'RUB-001', categoria: 'Componentes', precio: 0 },
+        { id: '13', nombre: 'Rodillo Pickup', codigo: 'ROD-001', categoria: 'Componentes', precio: 0 },
+        { id: '14', nombre: 'Gomas', codigo: 'GOM-001', categoria: 'Componentes', precio: 0 },
+        { id: '15', nombre: 'Toner', codigo: 'TON-001', categoria: 'Consumibles', precio: 0 }
+      ] as Repuesto[],
+      incidentes: [
+        {
+          id: '1',
+          fecha: '2025-08-12',
+          ubicacionId: '1',
+          maquinaId: '1',
+          descripcion: 'Atasca papel, hace ruido (impresora)',
+          tipoFalla: 'Mecánica',
+          dificultad: 'media',
+          tiempoReparacion: 3,
+          repuestosUtilizados: [
+            { repuestoId: '2', cantidad: 1 },
+            { repuestoId: '3', cantidad: 1 },
+            { repuestoId: '4', cantidad: 1 },
+            { repuestoId: '1', cantidad: 1 }
+          ],
+          tecnico: 'Técnico',
+          observaciones: 'limpieza equipo, limpieza unidad de imagen, lubricación, cambio pickup y retard, cambio del cluch y fusor (impresora)',
+          serieEquipo: 'S4020-001'
+        },
+        {
+          id: '2',
+          fecha: '2025-09-04',
+          ubicacionId: '1',
+          maquinaId: '1',
+          descripcion: 'impresora no imprime y olor a quemado (impresora)',
+          tipoFalla: 'Eléctrica',
+          dificultad: 'alta',
+          tiempoReparacion: 4,
+          repuestosUtilizados: [
+            { repuestoId: '5', cantidad: 1 },
+            { repuestoId: '1', cantidad: 1 },
+            { repuestoId: '6', cantidad: 1 }
+          ],
+          tecnico: 'Técnico',
+          observaciones: 'La low estaba quemada, salto fusible y el fusor de la impresora también se quemó aparte cambiamos la puerta trasera de la impresora porque estaba rota',
+          serieEquipo: 'S4020-001'
+        },
+        {
+          id: '3',
+          fecha: '2025-09-03',
+          ubicacionId: '2',
+          maquinaId: '2',
+          descripcion: 'no reconoce insumos, imprime de manera defectuosa',
+          tipoFalla: 'Electrónica',
+          dificultad: 'critica',
+          tiempoReparacion: 6,
+          repuestosUtilizados: [
+            { repuestoId: '1', cantidad: 1 },
+            { repuestoId: '7', cantidad: 1 },
+            { repuestoId: '8', cantidad: 1 },
+            { repuestoId: '9', cantidad: 1 },
+            { repuestoId: '10', cantidad: 1 }
+          ],
+          tecnico: 'Técnico',
+          observaciones: 'cambiamos fusor porque rompía la hoja, cambiamos lo verde de la tapa delantera porque estaba roto a la derecha, hicimos un puente del swith porque estaba roto y no teníamos así que cortamos el cable y hicimos que siempre lo detecte como cerrado, cambiamos el recogedor de hojas derecho de bandeja A4 y oficio, pero seguramente en algún momento cambiamos el izquierdo, cambiamos controller por descartar errores, pero al final descubrimos que una de las fallas era por el switch.',
+          serieEquipo: 'LX656-001'
+        },
+        {
+          id: '5',
+          fecha: '2025-08-19',
+          ubicacionId: '3',
+          maquinaId: '3',
+          descripcion: 'Falla en impresión',
+          tipoFalla: 'Consumibles',
+          dificultad: 'baja',
+          tiempoReparacion: 1,
+          repuestosUtilizados: [
+            { repuestoId: '11', cantidad: 1 }
+          ],
+          tecnico: 'Técnico',
+          observaciones: 'Cambio de cartucher magenta y limpieza equipo y limpieza rodillos',
+          serieEquipo: 'SCLP680N-001'
+        },
+        {
+          id: '6',
+          fecha: '2025-08-18',
+          ubicacionId: '4',
+          maquinaId: '4',
+          descripcion: 'No imprime duplex',
+          tipoFalla: 'Mecánica',
+          dificultad: 'baja',
+          tiempoReparacion: 1,
+          repuestosUtilizados: [
+            { repuestoId: '12', cantidad: 1 }
+          ],
+          tecnico: 'Técnico',
+          observaciones: 'Faltaba lubricar y cambiar rubber',
+          serieEquipo: 'SM4072-001'
+        },
+        {
+          id: '7',
+          fecha: '2025-08-19',
+          ubicacionId: '2',
+          maquinaId: '2',
+          descripcion: 'Mantenimiento preventivo',
+          tipoFalla: 'Mantenimiento',
+          dificultad: 'baja',
+          tiempoReparacion: 2,
+          repuestosUtilizados: [],
+          tecnico: 'Técnico',
+          observaciones: 'Limpieza equipo, limpieza de rodillo pickup, limpieza de escaner y reseteo contadores',
+          serieEquipo: 'LX656-001'
+        },
+        {
+          id: '8',
+          fecha: '2025-08-19',
+          ubicacionId: '2',
+          maquinaId: '2',
+          descripcion: 'Mantenimiento preventivo',
+          tipoFalla: 'Mantenimiento',
+          dificultad: 'baja',
+          tiempoReparacion: 2,
+          repuestosUtilizados: [],
+          tecnico: 'Técnico',
+          observaciones: 'Limpieza equipo, limpieza de rodillo pickup, limpieza de escaner, reseteo contadores',
+          serieEquipo: 'LX656-001'
+        },
+        {
+          id: '9',
+          fecha: '2025-08-19',
+          ubicacionId: '5',
+          maquinaId: '5',
+          descripcion: 'Arruga las hojas, atasca papel, mensaje de error',
+          tipoFalla: 'Mecánica',
+          dificultad: 'media',
+          tiempoReparacion: 2,
+          repuestosUtilizados: [
+            { repuestoId: '14', cantidad: 1 },
+            { repuestoId: '15', cantidad: 1 }
+          ],
+          tecnico: 'Técnico',
+          observaciones: 'Gomas gastadas, toner en la zona de impresion y limpieza general',
+          serieEquipo: 'HPE52645DN-001'
+        }
+      ] as Incidente[]
+    };
+  }
+
+  // Inicializar datos si no existen
+  private inicializarDatos() {
+    const datos = this.getDatosIniciales();
+    
+    // Forzar actualización de datos para asegurar coordenadas correctas
+    localStorage.setItem(this.STORAGE_KEYS.UBICACIONES, JSON.stringify(datos.ubicaciones));
+    localStorage.setItem(this.STORAGE_KEYS.MAQUINAS, JSON.stringify(datos.maquinas));
+    localStorage.setItem(this.STORAGE_KEYS.REPUESTOS, JSON.stringify(datos.repuestos));
+    localStorage.setItem(this.STORAGE_KEYS.INCIDENTES, JSON.stringify(datos.incidentes));
+  }
+
+  constructor() {
+    this.inicializarDatos();
+  }
+
+  // Métodos para obtener datos
+  getUbicaciones(): Ubicacion[] {
+    const data = localStorage.getItem(this.STORAGE_KEYS.UBICACIONES);
+    return data ? JSON.parse(data) : [];
+  }
+
+  getMaquinas(): Maquina[] {
+    const data = localStorage.getItem(this.STORAGE_KEYS.MAQUINAS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  getRepuestos(): Repuesto[] {
+    const data = localStorage.getItem(this.STORAGE_KEYS.REPUESTOS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  getIncidentes(filtros?: Filtros): Incidente[] {
+    const data = localStorage.getItem(this.STORAGE_KEYS.INCIDENTES);
+    let incidentes: Incidente[] = data ? JSON.parse(data) : [];
+
+    if (filtros) {
+      incidentes = this.aplicarFiltros(incidentes, filtros);
+    }
+
+    return incidentes;
+  }
+
+  // Métodos para agregar datos
+  agregarIncidente(incidente: Omit<Incidente, 'id'>): Incidente {
+    const incidentes = this.getIncidentes();
+    const nuevoIncidente: Incidente = {
+      ...incidente,
+      id: Date.now().toString()
+    };
+    
+    incidentes.push(nuevoIncidente);
+    localStorage.setItem(this.STORAGE_KEYS.INCIDENTES, JSON.stringify(incidentes));
+    return nuevoIncidente;
+  }
+
+  agregarUbicacion(ubicacion: Omit<Ubicacion, 'id'>): Ubicacion {
+    const ubicaciones = this.getUbicaciones();
+    const nuevaUbicacion: Ubicacion = {
+      ...ubicacion,
+      id: Date.now().toString()
+    };
+    
+    ubicaciones.push(nuevaUbicacion);
+    localStorage.setItem(this.STORAGE_KEYS.UBICACIONES, JSON.stringify(ubicaciones));
+    return nuevaUbicacion;
+  }
+
+  agregarMaquina(maquina: Omit<Maquina, 'id'>): Maquina {
+    const maquinas = this.getMaquinas();
+    const nuevaMaquina: Maquina = {
+      ...maquina,
+      id: Date.now().toString()
+    };
+    
+    maquinas.push(nuevaMaquina);
+    localStorage.setItem(this.STORAGE_KEYS.MAQUINAS, JSON.stringify(maquinas));
+    return nuevaMaquina;
+  }
+
+  agregarRepuesto(repuesto: Omit<Repuesto, 'id'>): Repuesto {
+    const repuestos = this.getRepuestos();
+    const nuevoRepuesto: Repuesto = {
+      ...repuesto,
+      id: Date.now().toString()
+    };
+    
+    repuestos.push(nuevoRepuesto);
+    localStorage.setItem(this.STORAGE_KEYS.REPUESTOS, JSON.stringify(repuestos));
+    return nuevoRepuesto;
+  }
+
+  // Aplicar filtros
+  private aplicarFiltros(incidentes: Incidente[], filtros: Filtros): Incidente[] {
+    return incidentes.filter(incidente => {
+      if (filtros.fechaInicio && incidente.fecha < filtros.fechaInicio) return false;
+      if (filtros.fechaFin && incidente.fecha > filtros.fechaFin) return false;
+      if (filtros.dificultad && filtros.dificultad.length > 0 && !filtros.dificultad.includes(incidente.dificultad)) return false;
+      if (filtros.tipoFalla && filtros.tipoFalla.length > 0 && !filtros.tipoFalla.includes(incidente.tipoFalla)) return false;
+      if (filtros.ubicacion && filtros.ubicacion.length > 0 && !filtros.ubicacion.includes(incidente.ubicacionId)) return false;
+      if (filtros.tecnico && !incidente.tecnico.toLowerCase().includes(filtros.tecnico.toLowerCase())) return false;
+      return true;
+    });
+  }
+
+  // Calcular estadísticas por ubicación
+  getEstadisticasUbicacion(): EstadisticasUbicacion[] {
+    const incidentes = this.getIncidentes();
+    const ubicaciones = this.getUbicaciones();
+    const maquinas = this.getMaquinas();
+
+    return ubicaciones.map(ubicacion => {
+      const incidentesUbicacion = incidentes.filter(i => i.ubicacionId === ubicacion.id);
+      const maquinasUbicacion = maquinas.filter(m => m.ubicacionId === ubicacion.id);
+      
+      const totalRepuestos = incidentesUbicacion.reduce((sum, i) => 
+        sum + i.repuestosUtilizados.reduce((repSum, r) => repSum + r.cantidad, 0), 0
+      );
+
+      const dificultadNumerica = incidentesUbicacion.map(i => {
+        switch (i.dificultad) {
+          case 'baja': return 1;
+          case 'media': return 2;
+          case 'alta': return 3;
+          case 'critica': return 4;
+          default: return 0;
+        }
+      });
+
+      const dificultadPromedio = dificultadNumerica.length > 0 
+        ? dificultadNumerica.reduce((sum: number, d: number) => sum + d, 0) / dificultadNumerica.length 
+        : 0;
+
+      const tiempoPromedio = incidentesUbicacion.length > 0
+        ? incidentesUbicacion.reduce((sum, i) => sum + i.tiempoReparacion, 0) / incidentesUbicacion.length
+        : 0;
+
+      // Costos eliminados según solicitud del usuario
+
+      const ultimaVisita = incidentesUbicacion.length > 0
+        ? Math.max(...incidentesUbicacion.map(i => new Date(i.fecha).getTime()))
+        : 0;
+
+      return {
+        ubicacionId: ubicacion.id,
+        totalIncidentes: incidentesUbicacion.length,
+        totalMaquinas: maquinasUbicacion.length,
+        totalRepuestos,
+        dificultadPromedio,
+        tiempoPromedioReparacion: tiempoPromedio,
+        ultimaVisita: ultimaVisita > 0 ? new Date(ultimaVisita).toISOString().split('T')[0] : ''
+      };
+    });
+  }
+
+  // Calcular estadísticas de repuestos
+  getEstadisticasRepuestos(): EstadisticasRepuesto[] {
+    const incidentes = this.getIncidentes();
+    const repuestos = this.getRepuestos();
+
+    const repuestoStats = new Map<string, {
+      totalUtilizado: number;
+      ubicaciones: Set<string>;
+      frecuencia: number;
+    }>();
+
+    incidentes.forEach(incidente => {
+      incidente.repuestosUtilizados.forEach(repuesto => {
+        const rep = repuestos.find(r => r.id === repuesto.repuestoId);
+        if (rep) {
+          const current = repuestoStats.get(repuesto.repuestoId) || {
+            totalUtilizado: 0,
+            ubicaciones: new Set(),
+            frecuencia: 0
+          };
+
+          current.totalUtilizado += repuesto.cantidad;
+          current.ubicaciones.add(incidente.ubicacionId);
+          current.frecuencia += 1;
+
+          repuestoStats.set(repuesto.repuestoId, current);
+        }
+      });
+    });
+
+    return Array.from(repuestoStats.entries()).map(([repuestoId, stats]) => {
+      const repuesto = repuestos.find(r => r.id === repuestoId);
+      return {
+        repuestoId,
+        nombre: repuesto?.nombre || 'Repuesto desconocido',
+        totalUtilizado: stats.totalUtilizado,
+        ubicaciones: Array.from(stats.ubicaciones),
+        frecuencia: stats.frecuencia
+      };
+    }).sort((a, b) => b.totalUtilizado - a.totalUtilizado);
+  }
+
+}
+
+export const dataService = new DataService();
