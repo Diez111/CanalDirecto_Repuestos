@@ -38,7 +38,7 @@ const NavegacionMovil: React.FC<NavegacionMovilProps> = ({
       {/* Botón de menú hamburguesa */}
       <button
         onClick={() => setMenuAbierto(!menuAbierto)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg border"
+        className="lg:hidden fixed top-4 left-4 z-[9999] p-2 bg-white rounded-lg shadow-lg border"
       >
         {menuAbierto ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
@@ -46,13 +46,13 @@ const NavegacionMovil: React.FC<NavegacionMovilProps> = ({
       {/* Overlay del menú móvil */}
       {menuAbierto && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-[9998]"
           onClick={() => setMenuAbierto(false)}
         />
       )}
 
       {/* Menú lateral móvil */}
-      <div className={`lg:hidden fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ${
+      <div className={`lg:hidden fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-[9999] transform transition-transform duration-300 ${
         menuAbierto ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-6">

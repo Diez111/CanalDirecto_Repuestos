@@ -80,9 +80,6 @@ function App() {
               <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <Map className="w-5 h-5 text-white" />
               </div>
-              <h1 className={`text-xl font-semibold transition-colors duration-300 ${modoOscuro ? 'text-white' : 'text-gray-900'}`}>
-                Sistema de Gestión de Impresoras
-              </h1>
             </div>
             
             <div className="flex items-center gap-1 sm:gap-2">
@@ -242,42 +239,53 @@ function App() {
           <div className="space-y-4 lg:space-y-6">
             {/* Resumen de estadísticas */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
-              <div className="bg-white p-3 lg:p-4 rounded-lg shadow">
+              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-blue-600">
                   {estadisticas.reduce((sum, s) => sum + s.totalIncidentes, 0)}
                 </div>
-                <div className="text-xs lg:text-sm text-gray-600">Total Incidentes</div>
+                <div className={`text-xs lg:text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Incidentes</div>
               </div>
               
-              <div className="bg-white p-3 lg:p-4 rounded-lg shadow">
+              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-green-600">
                   {estadisticas.length}
                 </div>
-                <div className="text-xs lg:text-sm text-gray-600">Ubicaciones</div>
+                <div className={`text-xs lg:text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Ubicaciones</div>
               </div>
               
-              <div className="bg-white p-3 lg:p-4 rounded-lg shadow">
+              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-orange-600">
                   {estadisticas.reduce((sum, s) => sum + s.totalMaquinas, 0)}
                 </div>
-                <div className="text-xs lg:text-sm text-gray-600">Total Máquinas</div>
+                <div className={`text-xs lg:text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Máquinas</div>
               </div>
               
-              <div className="bg-white p-3 lg:p-4 rounded-lg shadow">
+              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-purple-600">
                   {estadisticas.reduce((sum, s) => sum + s.totalRepuestos, 0)}
                 </div>
-                <div className="text-xs lg:text-sm text-gray-600">Repuestos Utilizados</div>
+                <div className={`text-xs lg:text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Repuestos Utilizados</div>
               </div>
             </div>
 
             {/* Mapa interactivo */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden" style={{ height: '400px' }}>
-              <MapaInteractivo
-                key={versionDatos}
-                filtros={filtros}
-                onUbicacionSeleccionada={handleUbicacionSeleccionada}
-              />
+            <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-lg overflow-hidden border`}>
+              <div className={`p-4 border-b ${modoOscuro ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-gray-50'}`}>
+                <h2 className={`text-lg font-semibold ${modoOscuro ? 'text-white' : 'text-gray-800'} flex items-center gap-2`}>
+                  <Map className="w-5 h-5 text-blue-500" />
+                  Mapa de Incidentes
+                </h2>
+                <p className={`text-sm mt-1 ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Visualiza las ubicaciones y su nivel de dificultad
+                </p>
+              </div>
+              <div className="relative" style={{ height: '500px' }}>
+                <MapaInteractivo
+                  key={versionDatos}
+                  filtros={filtros}
+                  onUbicacionSeleccionada={handleUbicacionSeleccionada}
+                />
+              </div>
             </div>
           </div>
         )}

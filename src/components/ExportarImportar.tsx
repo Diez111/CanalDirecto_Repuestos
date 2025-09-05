@@ -48,8 +48,7 @@ const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false,
           incidentes: dataService.getIncidentes(),
           ubicaciones: dataService.getUbicaciones(),
           repuestos: dataService.getRepuestos(),
-          maquinas: dataService.getMaquinas(),
-          tecnicos: dataService.getTecnicos()
+          maquinas: dataService.getMaquinas()
         },
         estadisticas: {
           totalIncidentes: dataService.getIncidentes().length,
@@ -99,10 +98,10 @@ const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false,
         }
 
         // Validar que contenga los datos necesarios
-        const { incidentes, ubicaciones, repuestos, maquinas, tecnicos } = datosImportados.datos;
+        const { incidentes, ubicaciones, repuestos, maquinas } = datosImportados.datos;
         
         if (!Array.isArray(incidentes) || !Array.isArray(ubicaciones) || 
-            !Array.isArray(repuestos) || !Array.isArray(maquinas) || !Array.isArray(tecnicos)) {
+            !Array.isArray(repuestos) || !Array.isArray(maquinas)) {
           throw new Error('Estructura de datos inválida');
         }
 
@@ -110,11 +109,10 @@ const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false,
         localStorage.clear();
         
         // Cargar datos en el sistema
-        localStorage.setItem('incidentes', JSON.stringify(incidentes));
-        localStorage.setItem('ubicaciones', JSON.stringify(ubicaciones));
-        localStorage.setItem('repuestos', JSON.stringify(repuestos));
-        localStorage.setItem('maquinas', JSON.stringify(maquinas));
-        localStorage.setItem('tecnicos', JSON.stringify(tecnicos));
+        localStorage.setItem('incidentes_data', JSON.stringify(incidentes));
+        localStorage.setItem('ubicaciones_data', JSON.stringify(ubicaciones));
+        localStorage.setItem('repuestos_data', JSON.stringify(repuestos));
+        localStorage.setItem('maquinas_data', JSON.stringify(maquinas));
 
         // Notificar actualización
         if (onDatosActualizados) {
@@ -161,14 +159,13 @@ const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false,
     const ubicaciones = dataService.getUbicaciones();
     const repuestos = dataService.getRepuestos();
     const maquinas = dataService.getMaquinas();
-    const tecnicos = dataService.getTecnicos();
 
     return {
       totalIncidentes: incidentes.length,
       totalUbicaciones: ubicaciones.length,
       totalRepuestos: repuestos.length,
       totalMaquinas: maquinas.length,
-      totalTecnicos: tecnicos.length
+      totalTecnicos: 0 // No hay datos de técnicos en el sistema actual
     };
   };
 
