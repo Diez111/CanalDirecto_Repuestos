@@ -30,6 +30,13 @@ interface RepuestosStockearProps {
   modoOscuro?: boolean;
 }
 
+interface DuracionStock {
+  id: string;
+  nombre: string;
+  semanas: number;
+  descripcion: string;
+}
+
 const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = false }) => {
   const [repuestosStock, setRepuestosStock] = useState<RepuestoStock[]>([]);
   const [consejosTecnicos, setConsejosTecnicos] = useState<ConsejoTecnico[]>([]);
@@ -39,6 +46,29 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analisisPorModelo, setAnalisisPorModelo] = useState<any>({});
+  const [duracionStock, setDuracionStock] = useState<string>('2'); // 2 semanas por defecto
+  const [analisisIA, setAnalisisIA] = useState<any>(null);
+  const [cargandoIA, setCargandoIA] = useState(false);
+
+  // Cargar análisis IA guardado al inicializar
+  useEffect(() => {
+    const analisisGuardado = localStorage.getItem('analisis_ia_stockear');
+    if (analisisGuardado) {
+      try {
+        setAnalisisIA(JSON.parse(analisisGuardado));
+      } catch (error) {
+        console.error('Error al cargar análisis IA guardado:', error);
+      }
+    }
+  }, []);
+
+  // Opciones de duración de stock
+  const opcionesDuracion: DuracionStock[] = [
+    { id: '1', nombre: '1 Semana', semanas: 1, descripcion: 'Stock mínimo para emergencias' },
+    { id: '2', nombre: '2 Semanas', semanas: 2, descripcion: 'Stock estándar recomendado' },
+    { id: '3', nombre: '3 Semanas', semanas: 3, descripcion: 'Stock amplio para alta demanda' },
+    { id: '4', nombre: '1 Mes', semanas: 4, descripcion: 'Stock extendido para múltiples ubicaciones' }
+  ];
 
   useEffect(() => {
     setCargando(true);
@@ -117,69 +147,104 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
     // Guardar el análisis en el estado
     setAnalisisPorModelo(analisisPorModelo);
 
-    // Lista base de repuestos esenciales para impresoras
-    const repuestosEsenciales = [
-      // Componentes críticos de impresoras
-      { nombre: 'Fusor', categoria: 'Componentes', prioridad: 'critica', cantidad: 3, razon: 'Componente más crítico, falla frecuentemente por sobrecalentamiento' },
-      { nombre: 'Pickup', categoria: 'Componentes', prioridad: 'critica', cantidad: 4, razon: 'Se desgasta rápido, causa atascos de papel' },
-      { nombre: 'Retard', categoria: 'Componentes', prioridad: 'alta', cantidad: 3, razon: 'Componente de alimentación de papel, falla común' },
-      { nombre: 'Clutch', categoria: 'Componentes', prioridad: 'alta', cantidad: 3, razon: 'Control de alimentación, falla por desgaste' },
-      { nombre: 'Low', categoria: 'Componentes', prioridad: 'critica', cantidad: 2, razon: 'Componente eléctrico crítico, se quema frecuentemente' },
-      
-      // Componentes estructurales
-      { nombre: 'Puerta Trasera', categoria: 'Componentes', prioridad: 'media', cantidad: 2, razon: 'Se rompe por uso, afecta funcionamiento' },
-      { nombre: 'Tapa Delantera Verde', categoria: 'Componentes', prioridad: 'media', cantidad: 2, razon: 'Componente estructural que se daña' },
-      { nombre: 'Switch', categoria: 'Componentes', prioridad: 'alta', cantidad: 5, razon: 'Sensores de posición, fallan por desgaste' },
-      { nombre: 'Recogedor de Hojas', categoria: 'Componentes', prioridad: 'alta', cantidad: 4, razon: 'Se desgasta por uso constante' },
-      { nombre: 'Controller', categoria: 'Componentes', prioridad: 'critica', cantidad: 2, razon: 'Placa principal, falla electrónica crítica' },
-      
-      // Consumibles esenciales
-      { nombre: 'Cartucho Magenta', categoria: 'Consumibles', prioridad: 'alta', cantidad: 6, razon: 'Consumible más usado en impresoras color' },
-      { nombre: 'Cartucho Cian', categoria: 'Consumibles', prioridad: 'alta', cantidad: 6, razon: 'Consumible esencial para impresión color' },
-      { nombre: 'Cartucho Amarillo', categoria: 'Consumibles', prioridad: 'alta', cantidad: 6, razon: 'Consumible esencial para impresión color' },
-      { nombre: 'Cartucho Negro', categoria: 'Consumibles', prioridad: 'critica', cantidad: 10, razon: 'Consumible más crítico, se agota rápido' },
-      { nombre: 'Toner', categoria: 'Consumibles', prioridad: 'alta', cantidad: 8, razon: 'Consumible principal para impresoras láser' },
-      
-      // Componentes mecánicos
-      { nombre: 'Rubber', categoria: 'Componentes', prioridad: 'alta', cantidad: 5, razon: 'Rodillos de goma, se desgastan por fricción' },
-      { nombre: 'Rodillo Pickup', categoria: 'Componentes', prioridad: 'alta', cantidad: 4, razon: 'Rodillo de alimentación, desgaste constante' },
-      { nombre: 'Gomas', categoria: 'Componentes', prioridad: 'media', cantidad: 6, razon: 'Elementos de goma que se deterioran' },
-      { nombre: 'Rodillos de Presión', categoria: 'Componentes', prioridad: 'media', cantidad: 3, razon: 'Rodillos del sistema de impresión' },
-      
-      // Componentes de limpieza
-      { nombre: 'Kit de Limpieza', categoria: 'Mantenimiento', prioridad: 'alta', cantidad: 5, razon: 'Esencial para mantenimiento preventivo' },
-      { nombre: 'Lubricante Especial', categoria: 'Mantenimiento', prioridad: 'alta', cantidad: 3, razon: 'Lubricación específica para impresoras' },
-      { nombre: 'Alcohol Isopropílico', categoria: 'Mantenimiento', prioridad: 'alta', cantidad: 4, razon: 'Limpieza de componentes electrónicos' },
-      
-      // Componentes eléctricos
-      { nombre: 'Fusibles Varios', categoria: 'Eléctricos', prioridad: 'alta', cantidad: 20, razon: 'Protección eléctrica, diferentes amperajes' },
-      { nombre: 'Cables de Alimentación', categoria: 'Eléctricos', prioridad: 'media', cantidad: 3, razon: 'Cables que se dañan por uso' },
-      { nombre: 'Conectores', categoria: 'Eléctricos', prioridad: 'media', cantidad: 10, razon: 'Conectores que se deterioran' },
-      
-      // Herramientas especializadas
-      { nombre: 'Destornilladores Torx', categoria: 'Herramientas', prioridad: 'alta', cantidad: 2, razon: 'Herramientas específicas para impresoras' },
-      { nombre: 'Pinzas de Precisión', categoria: 'Herramientas', prioridad: 'alta', cantidad: 2, razon: 'Para manipular componentes pequeños' },
-      { nombre: 'Multímetro', categoria: 'Herramientas', prioridad: 'alta', cantidad: 1, razon: 'Diagnóstico eléctrico esencial' }
-    ];
+    // Repuestos específicos por modelo de impresora (SIN consumibles ni herramientas)
+    const repuestosPorModelo = {
+      // Samsung SL-M4020ND
+      'Samsung SL-M4020ND': [
+        { nombre: 'Fusor Samsung SL-M4020ND', categoria: 'Componentes', prioridad: 'critica', cantidad: 2, razon: 'Fusor específico para Samsung SL-M4020ND, falla por sobrecalentamiento' },
+        { nombre: 'Pickup Samsung SL-M4020ND', categoria: 'Componentes', prioridad: 'critica', cantidad: 3, razon: 'Pickup específico Samsung, causa atascos de papel' },
+        { nombre: 'Rubber Samsung SL-M4020ND', categoria: 'Componentes', prioridad: 'alta', cantidad: 2, razon: 'Rodillos de goma específicos Samsung' },
+        { nombre: 'Retard Samsung SL-M4020ND', categoria: 'Componentes', prioridad: 'alta', cantidad: 2, razon: 'Componente de alimentación específico' },
+        { nombre: 'Duplex Samsung SL-M4020ND', categoria: 'Componentes', prioridad: 'media', cantidad: 1, razon: 'Unidad duplex específica Samsung' }
+      ],
+      // Samsung SL-M5370LX
+      'Samsung SL-M5370LX': [
+        { nombre: 'Fusor Samsung SL-M5370LX', categoria: 'Componentes', prioridad: 'critica', cantidad: 2, razon: 'Fusor específico para Samsung SL-M5370LX' },
+        { nombre: 'Pickup Samsung SL-M5370LX', categoria: 'Componentes', prioridad: 'critica', cantidad: 3, razon: 'Pickup específico Samsung SL-M5370LX' },
+        { nombre: 'Sensor CTD Samsung SL-M5370LX', categoria: 'Componentes', prioridad: 'alta', cantidad: 2, razon: 'Sensor específico Samsung' },
+        { nombre: 'Controller Samsung SL-M5370LX', categoria: 'Componentes', prioridad: 'critica', cantidad: 1, razon: 'Placa principal específica' }
+      ],
+      // Samsung SL-M5360RX
+      'Samsung SL-M5360RX': [
+        { nombre: 'Fusor Samsung SL-M5360RX', categoria: 'Componentes', prioridad: 'critica', cantidad: 2, razon: 'Fusor específico para Samsung SL-M5360RX' },
+        { nombre: 'Unidad de Imagen Samsung SL-M5360RX', categoria: 'Componentes', prioridad: 'alta', cantidad: 1, razon: 'Unidad de imagen específica Samsung' },
+        { nombre: 'Pickup Samsung SL-M5360RX', categoria: 'Componentes', prioridad: 'alta', cantidad: 2, razon: 'Pickup específico Samsung' }
+      ],
+      // Lexmark Optra X656de
+      'Lexmark Optra X656de': [
+        { nombre: 'Fusor Lexmark X656de', categoria: 'Componentes', prioridad: 'critica', cantidad: 2, razon: 'Fusor específico Lexmark X656de' },
+        { nombre: 'Rodillos Pick UP Tray 2 Lexmark', categoria: 'Componentes', prioridad: 'alta', cantidad: 3, razon: 'Rodillos específicos Lexmark' },
+        { nombre: 'Pickup Lexmark X656de', categoria: 'Componentes', prioridad: 'alta', cantidad: 2, razon: 'Pickup específico Lexmark' },
+        { nombre: 'Retard Lexmark X656de', categoria: 'Componentes', prioridad: 'media', cantidad: 2, razon: 'Retard específico Lexmark' }
+      ],
+      // HP e52645dn
+      'HP e52645dn': [
+        { nombre: 'Fusor HP e52645dn', categoria: 'Componentes', prioridad: 'critica', cantidad: 2, razon: 'Fusor específico HP e52645dn' },
+        { nombre: 'Gomas HP e52645dn', categoria: 'Componentes', prioridad: 'alta', cantidad: 3, razon: 'Gomas específicas HP' },
+        { nombre: 'Pickup HP e52645dn', categoria: 'Componentes', prioridad: 'alta', cantidad: 2, razon: 'Pickup específico HP' }
+      ]
+    };
 
-    // Combinar con datos reales de estadísticas
-    const listaCombinada = repuestosEsenciales.map(repuesto => {
-      const estadistica = estadisticas.find(s => s.nombre.toLowerCase().includes(repuesto.nombre.toLowerCase()));
-      const repuestoData = repuestos.find(r => r.nombre.toLowerCase().includes(repuesto.nombre.toLowerCase()));
-      
-      return {
-        id: repuesto.nombre.replace(/\s+/g, '-').toLowerCase(),
-        nombre: repuesto.nombre,
-        categoria: repuesto.categoria,
-        prioridad: repuesto.prioridad as 'critica' | 'alta' | 'media' | 'baja',
-        cantidadRecomendada: estadistica ? Math.max(repuesto.cantidad, Math.ceil(estadistica.totalUtilizado * 1.5)) : repuesto.cantidad,
-        razon: estadistica ? `${repuesto.razon} - Usado ${estadistica.totalUtilizado} veces` : repuesto.razon,
-        // Costos eliminados según solicitud del usuario
-        frecuenciaUso: estadistica ? estadistica.frecuencia : 0,
-        stockActual: Math.floor(Math.random() * 5), // Simulado
-        proveedor: 'Proveedor Principal',
-        tiempoEntrega: '1-3 días'
-      };
+    // Generar lista inteligente basada en modelos reales y duración de stock
+    const semanasStock = parseInt(duracionStock);
+    const listaCombinada: RepuestoStock[] = [];
+
+    // Obtener modelos únicos de las máquinas
+    const modelosUnicos = [...new Set(maquinas.map(m => m.modelo))];
+    
+    modelosUnicos.forEach(modelo => {
+      const repuestosModelo = repuestosPorModelo[modelo as keyof typeof repuestosPorModelo] || [];
+      const maquinasModelo = maquinas.filter(m => m.modelo === modelo);
+      const incidentesModelo = incidentes.filter(i => 
+        maquinasModelo.some(m => m.id === i.maquinaId)
+      );
+
+      repuestosModelo.forEach(repuesto => {
+        // Calcular cantidad basada en duración de stock y frecuencia de uso
+        const estadistica = estadisticas.find(s => 
+          s.nombre.toLowerCase().includes(repuesto.nombre.toLowerCase().split(' ')[0])
+        );
+        
+        // Frecuencia de uso del repuesto en este modelo
+        const frecuenciaModelo = incidentesModelo.filter(inc => 
+          inc.repuestosUtilizados.some(rep => 
+            repuestos.find(r => r.id === rep.repuestoId)?.nombre.toLowerCase().includes(
+              repuesto.nombre.toLowerCase().split(' ')[0]
+            )
+          )
+        ).length;
+
+        // Calcular cantidad inteligente basada en:
+        // 1. Cantidad base del repuesto
+        // 2. Número de máquinas del modelo
+        // 3. Frecuencia de uso
+        // 4. Duración de stock seleccionada
+        const cantidadBase = repuesto.cantidad;
+        const factorMaquinas = Math.ceil(maquinasModelo.length / 2); // 1 repuesto cada 2 máquinas
+        const factorFrecuencia = Math.min(frecuenciaModelo, 3); // Máximo factor 3
+        const factorDuracion = semanasStock; // Factor por semanas de stock
+        
+        const cantidadInteligente = Math.max(
+          cantidadBase,
+          Math.ceil((cantidadBase * factorMaquinas * factorFrecuencia * factorDuracion) / 4)
+        );
+
+        // Limitar cantidades exageradas
+        const cantidadFinal = Math.min(cantidadInteligente, 10);
+
+        listaCombinada.push({
+          id: `${modelo}-${repuesto.nombre.replace(/\s+/g, '-').toLowerCase()}`,
+          nombre: repuesto.nombre,
+          categoria: repuesto.categoria,
+          prioridad: repuesto.prioridad as 'critica' | 'alta' | 'media' | 'baja',
+          cantidadRecomendada: cantidadFinal,
+          razon: `${repuesto.razon} - Para ${maquinasModelo.length} máquina(s) ${modelo} - Stock para ${semanasStock} semana(s)`,
+          frecuenciaUso: frecuenciaModelo,
+          stockActual: Math.floor(Math.random() * 3), // Simulado
+          proveedor: 'Proveedor Principal',
+          tiempoEntrega: '1-3 días'
+        });
+      });
     });
 
     // Ordenar por prioridad y frecuencia de uso
@@ -279,6 +344,188 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
     setConsejosTecnicos(consejos);
   };
 
+  const ejecutarAnalisisIA = async () => {
+    setCargandoIA(true);
+    setError(null);
+
+    try {
+      const estadisticasRepuestos = dataService.getEstadisticasRepuestos();
+      const estadisticasUbicacion = dataService.getEstadisticasUbicacion();
+      const incidentes = dataService.getIncidentes();
+      const ubicaciones = dataService.getUbicaciones();
+      const repuestos = dataService.getRepuestos();
+      const maquinas = dataService.getMaquinas();
+
+      const semanasStock = parseInt(duracionStock);
+      const duracionSeleccionada = opcionesDuracion.find(d => d.id === duracionStock);
+
+      // Preparar datos específicos para el análisis
+      const datosEspecificos = {
+        modelosMaquinas: maquinas.map(m => ({
+          modelo: m.modelo,
+          ubicacion: ubicaciones.find(u => u.id === m.ubicacionId)?.nombre,
+          estado: m.estado
+        })),
+        incidentesPorModelo: maquinas.map(maquina => {
+          const incidentesModelo = incidentes.filter(i => i.maquinaId === maquina.id);
+          return {
+            modelo: maquina.modelo,
+            totalIncidentes: incidentesModelo.length,
+            repuestosUsados: incidentesModelo.flatMap(i => 
+              i.repuestosUtilizados.map(rep => {
+                const repuesto = repuestos.find(r => r.id === rep.repuestoId);
+                return repuesto ? repuesto.nombre : 'Desconocido';
+              })
+            ),
+            tiposFalla: [...new Set(incidentesModelo.map(i => i.tipoFalla))],
+            dificultades: incidentesModelo.map(i => i.dificultad)
+          };
+        }),
+        repuestosMasUsados: estadisticasRepuestos.slice(0, 10).map(stat => ({
+          nombre: stat.nombre,
+          totalUtilizado: stat.totalUtilizado,
+          frecuencia: stat.frecuencia,
+          ubicaciones: stat.ubicaciones.length
+        })),
+        ubicacionesConMasProblemas: estadisticasUbicacion
+          .sort((a, b) => b.totalIncidentes - a.totalIncidentes)
+          .slice(0, 5)
+          .map(stat => {
+            const ubicacion = ubicaciones.find(u => u.id === stat.ubicacionId);
+            return {
+              nombre: ubicacion?.nombre || 'Desconocida',
+              empresa: ubicacion?.empresa || 'Desconocida',
+              totalIncidentes: stat.totalIncidentes,
+              dificultadPromedio: stat.dificultadPromedio,
+              tiempoPromedio: stat.tiempoPromedioReparacion
+            };
+          })
+      };
+
+      const prompt = `
+Eres un experto en gestión de inventario de repuestos para impresoras. Analiza EXACTAMENTE estos datos reales y proporciona recomendaciones específicas.
+
+IMPORTANTE: 
+- NO inventes nombres de repuestos que no existan
+- NO inventes nombres de máquinas que no existan  
+- NO inventes técnicos veteranos ni consejos falsos
+- SOLO usa los datos reales proporcionados
+- NO incluyas consumibles (cartuchos, toner, tinta)
+- NO incluyas herramientas (destornilladores, multímetros, pinzas)
+- SOLO repuestos mecánicos y componentes específicos por modelo
+- Considera que el stock debe durar ${semanasStock} semana(s)
+
+DATOS REALES DEL SISTEMA:
+${JSON.stringify(datosEspecificos, null, 2)}
+
+REGLAS ESTRICTAS:
+1. Solo usa repuestos que aparezcan en los datos reales
+2. Solo usa modelos de máquinas que aparezcan en los datos reales
+3. NO inventes nada que no esté en los datos
+4. Basa las cantidades en la frecuencia real de uso
+5. Considera la duración de stock de ${semanasStock} semana(s)
+
+Responde SOLO con JSON válido:
+{
+  "recomendaciones": [
+    "Recomendación basada en datos reales 1",
+    "Recomendación basada en datos reales 2"
+  ],
+  "repuestosCriticos": [
+    {
+      "nombre": "Nombre exacto del repuesto de los datos",
+      "cantidadRecomendada": 2,
+      "razon": "Basado en frecuencia real de uso",
+      "urgencia": "alta",
+      "modelo": "Modelo exacto de los datos"
+    }
+  ],
+  "analisisModelos": {
+    "modelosMasCriticos": [
+      {
+        "modelo": "Modelo exacto de los datos",
+        "repuestosCriticos": ["Repuesto real 1", "Repuesto real 2"],
+        "frecuenciaFallas": 2
+      }
+    ]
+  }
+}
+
+Responde SOLO con el JSON, sin explicaciones adicionales.
+`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer sk-0ba4714c7ae44432939b432334a3e5b7'
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error en la API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const contenido = data.choices[0].message.content;
+      
+      const jsonMatch = contenido.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No se pudo extraer JSON válido de la respuesta');
+      }
+
+      const analisisResultado = JSON.parse(jsonMatch[0]);
+      setAnalisisIA(analisisResultado);
+      
+      // Guardar análisis en localStorage
+      localStorage.setItem('analisis_ia_stockear', JSON.stringify(analisisResultado));
+      
+      // Regenerar lista con análisis IA
+      generarListaStock();
+
+    } catch (err) {
+      console.error('Error en análisis IA:', err);
+      setError('Error al conectar con IA. Usando análisis local...');
+      
+      // Análisis de respaldo
+      const analisisRespaldo = {
+        recomendaciones: [
+          'Implementar stock específico por modelo de impresora',
+          'Priorizar repuestos críticos según frecuencia de fallas',
+          'Considerar proximidad geográfica para optimizar rutas'
+        ],
+        repuestosCriticos: [
+          {
+            nombre: 'Fusor Samsung SL-M4020ND',
+            cantidadRecomendada: 2,
+            razon: 'Componente crítico con alta frecuencia de fallas',
+            urgencia: 'alta',
+            modelo: 'Samsung SL-M4020ND'
+          }
+        ],
+        analisisModelos: {
+          modelosMasCriticos: [
+            {
+              modelo: 'Samsung SL-M4020ND',
+              repuestosCriticos: ['Fusor', 'Pickup'],
+              frecuenciaFallas: 2
+            }
+          ]
+        }
+      };
+      
+      setAnalisisIA(analisisRespaldo);
+    } finally {
+      setCargandoIA(false);
+    }
+  };
+
   const getColorPrioridad = (prioridad: string) => {
     switch (prioridad) {
       case 'critica': return 'bg-red-100 text-red-800 border-red-200';
@@ -291,7 +538,9 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
 
   const getTextClasses = () => `${modoOscuro ? 'text-white' : 'text-gray-900'}`;
   const getSubTextClasses = () => `${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`;
-  const getCardClasses = () => `${modoOscuro ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`;
+  const getCardClasses = () => `${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-gray-50 border-gray-200'}`;
+  const getBackgroundClasses = () => `${modoOscuro ? 'bg-black' : 'bg-white'}`;
+  const getBorderClasses = () => `${modoOscuro ? 'border-gray-800' : 'border-gray-200'}`;
 
   const getIconoPrioridad = (prioridad: string) => {
     switch (prioridad) {
@@ -354,7 +603,7 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header con estadísticas */}
-      <div className={`${modoOscuro ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4 md:p-6`}>
+      <div className={`${getBackgroundClasses()} rounded-lg shadow-lg p-4 md:p-6 border ${getBorderClasses()}`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -366,13 +615,47 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
             </div>
           </div>
           
-          <button
-            onClick={() => setMostrarConsejos(!mostrarConsejos)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-medium"
-          >
-            <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">Consejos Técnicos</span>
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {/* Selector de duración de stock */}
+            <select
+              value={duracionStock}
+              onChange={(e) => setDuracionStock(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {opcionesDuracion.map(opcion => (
+                <option key={opcion.id} value={opcion.id}>
+                  {opcion.nombre}
+                </option>
+              ))}
+            </select>
+
+            {/* Botón de análisis IA */}
+            <button
+              onClick={ejecutarAnalisisIA}
+              disabled={cargandoIA}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium disabled:opacity-50"
+            >
+              {cargandoIA ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span className="hidden sm:inline">Analizando...</span>
+                </>
+              ) : (
+                <>
+                  <Brain className="w-4 h-4" />
+                  <span className="hidden sm:inline">Análisis IA</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => setMostrarConsejos(!mostrarConsejos)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all font-medium"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Consejos</span>
+            </button>
+          </div>
         </div>
 
         {/* Estadísticas generales */}
@@ -535,13 +818,93 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
         </div>
       </div>
 
+      {/* Análisis IA */}
+      {analisisIA && (
+        <div className={`${getBackgroundClasses()} rounded-lg shadow-lg p-4 md:p-6 mb-6 border ${getBorderClasses()}`}>
+          <div className="flex items-center gap-2 mb-4">
+            <Brain className="w-5 h-5 text-purple-500" />
+            <h2 className={`text-lg font-semibold ${getTextClasses()}`}>Análisis Inteligente con IA</h2>
+          </div>
+          
+          {/* Recomendaciones */}
+          {analisisIA.recomendaciones && (
+            <div className="mb-4">
+              <h3 className={`font-medium ${getTextClasses()} mb-2`}>Recomendaciones:</h3>
+              <ul className="space-y-1">
+                {analisisIA.recomendaciones.map((rec: string, index: number) => (
+                  <li key={index} className={`flex items-start gap-2 text-sm ${getSubTextClasses()}`}>
+                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
+                    <span>{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Repuestos críticos de IA */}
+          {analisisIA.repuestosCriticos && (
+            <div className="mb-4">
+              <h3 className={`font-medium ${getTextClasses()} mb-2`}>Repuestos Críticos Identificados:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {analisisIA.repuestosCriticos.map((repuesto: any, index: number) => (
+                  <div key={index} className={`border ${modoOscuro ? 'border-gray-600' : 'border-gray-200'} rounded-lg p-3`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className={`font-medium ${getTextClasses()}`}>{repuesto.nombre}</h4>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        repuesto.urgencia === 'alta' ? 'bg-red-100 text-red-800' :
+                        repuesto.urgencia === 'media' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {repuesto.urgencia?.toUpperCase() || 'MEDIA'}
+                      </span>
+                    </div>
+                    <p className={`text-sm ${getSubTextClasses()} mb-2`}>{repuesto.razon}</p>
+                    <div className="flex justify-between items-center">
+                      <span className={`text-sm ${getSubTextClasses()}`}>Cantidad recomendada:</span>
+                      <span className={`font-bold ${getTextClasses()}`}>{repuesto.cantidadRecomendada} unidades</span>
+                    </div>
+                    {repuesto.modelo && (
+                      <div className={`text-xs ${getSubTextClasses()} mt-1`}>
+                        Modelo: {repuesto.modelo}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Análisis por modelos */}
+          {analisisIA.analisisModelos?.modelosMasCriticos && (
+            <div>
+              <h3 className={`font-medium ${getTextClasses()} mb-2`}>Modelos Más Críticos:</h3>
+              <div className="space-y-2">
+                {analisisIA.analisisModelos.modelosMasCriticos.map((modelo: any, index: number) => (
+                  <div key={index} className={`border ${modoOscuro ? 'border-gray-600' : 'border-gray-200'} rounded-lg p-3`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className={`font-medium ${getTextClasses()}`}>{modelo.modelo}</h4>
+                      <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
+                        {modelo.frecuenciaFallas} fallas
+                      </span>
+                    </div>
+                    <div className={`text-sm ${getSubTextClasses()}`}>
+                      Repuestos críticos: {modelo.repuestosCriticos.join(', ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Lista de repuestos */}
-      <div className={`${modoOscuro ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4 md:p-6`}>
+      <div className={`${getBackgroundClasses()} rounded-lg shadow-lg p-4 md:p-6 border ${getBorderClasses()}`}>
         <h2 className={`text-lg md:text-xl font-semibold mb-4 md:mb-6 ${getTextClasses()}`}>Lista de Repuestos Recomendados</h2>
         
         <div className="space-y-3 md:space-y-4">
           {repuestosFiltrados.map((repuesto, index) => (
-            <div key={repuesto.id} className={`border ${modoOscuro ? 'border-gray-600' : 'border-gray-200'} rounded-lg p-3 md:p-4 hover:shadow-md transition-shadow`}>
+            <div key={repuesto.id} className={`border ${getBorderClasses()} rounded-lg p-3 md:p-4 hover:shadow-md transition-shadow ${modoOscuro ? 'bg-gray-900' : 'bg-white'}`}>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -591,7 +954,7 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
 
       {/* Consejos de técnicos veteranos */}
       {mostrarConsejos && (
-        <div className={`${modoOscuro ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4 md:p-6`}>
+        <div className={`${getBackgroundClasses()} rounded-lg shadow-lg p-4 md:p-6 border ${getBorderClasses()}`}>
           <div className="flex items-center gap-2 mb-4 md:mb-6">
             <Users className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
             <h2 className={`text-lg md:text-xl font-semibold ${getTextClasses()}`}>Consejos de Técnicos Veteranos</h2>
@@ -599,7 +962,7 @@ const RepuestosStockear: React.FC<RepuestosStockearProps> = ({ modoOscuro = fals
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {consejosTecnicos.map((consejo) => (
-              <div key={consejo.id} className={`border ${modoOscuro ? 'border-gray-600' : 'border-gray-200'} rounded-lg p-4 hover:shadow-md transition-shadow`}>
+              <div key={consejo.id} className={`border ${getBorderClasses()} rounded-lg p-4 hover:shadow-md transition-shadow ${modoOscuro ? 'bg-gray-900' : 'bg-white'}`}>
                 <div className="flex items-start justify-between mb-3">
                   <h3 className={`font-semibold ${getTextClasses()}`}>{consejo.titulo}</h3>
                   <div className="flex items-center gap-1">

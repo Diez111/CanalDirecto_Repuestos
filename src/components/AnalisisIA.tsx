@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, AlertTriangle, Package, DollarSign, Loader2 } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, Package, DollarSign, Loader2, MapPin } from 'lucide-react';
 import { EstadisticasRepuesto, EstadisticasUbicacion } from '../types';
 import { dataService } from '../services/dataService';
 
@@ -15,9 +15,39 @@ interface AnalisisResultado {
     razon: string;
     accion: string;
     urgencia: 'alta' | 'media' | 'baja';
+    maquinasAfectadas?: string[];
+    ubicacionesCriticas?: string[];
   }>;
   tendencias: string[];
   optimizaciones: string[];
+  analisisMaquinas?: {
+    maquinasMasRepetidas: Array<{
+      modelo: string;
+      cantidad: number;
+      repuestosCriticos: string[];
+      frecuenciaFallas: number;
+    }>;
+    patronesFallas: Array<{
+      tipoFalla: string;
+      frecuencia: number;
+      repuestosComunes: string[];
+    }>;
+  };
+  analisisUbicaciones?: {
+    ubicacionesProblematicas: Array<{
+      nombre: string;
+      empresa: string;
+      totalIncidentes: number;
+      dificultadPromedio: number;
+      problemasComunes: string[];
+      recomendaciones: string[];
+    }>;
+    patronesGeograficos: Array<{
+      region: string;
+      totalIncidentes: number;
+      problemasComunes: string[];
+    }>;
+  };
 }
 
 const AnalisisIA: React.FC<AnalisisIAProps> = ({ filtros, onDatosActualizados }) => {
@@ -48,10 +78,15 @@ const AnalisisIA: React.FC<AnalisisIAProps> = ({ filtros, onDatosActualizados })
           const ubicacion = ubicaciones.find(u => u.id === stat.ubicacionId);
           return {
             nombre: ubicacion?.nombre || 'Desconocida',
+            empresa: ubicacion?.empresa || 'Desconocida',
+            direccion: ubicacion?.direccion || 'Desconocida',
+            latitud: ubicacion?.latitud || 0,
+            longitud: ubicacion?.longitud || 0,
             totalIncidentes: stat.totalIncidentes,
             dificultadPromedio: stat.dificultadPromedio,
             tiempoPromedio: stat.tiempoPromedioReparacion,
-            totalRepuestos: stat.totalRepuestos
+            totalRepuestos: stat.totalRepuestos,
+            totalMaquinas: stat.totalMaquinas
           };
         }),
         incidentes: incidentes.map(inc => ({
@@ -59,12 +94,28 @@ const AnalisisIA: React.FC<AnalisisIAProps> = ({ filtros, onDatosActualizados })
           tipoFalla: inc.tipoFalla,
           dificultad: inc.dificultad,
           tiempoReparacion: inc.tiempoReparacion,
-          repuestosUtilizados: inc.repuestosUtilizados.length
-        }))
+          repuestosUtilizados: inc.repuestosUtilizados.length,
+          serieEquipo: inc.serieEquipo,
+          tecnico: inc.tecnico
+        })),
+        maquinas: dataService.getMaquinas().map(maquina => {
+          const ubicacion = ubicaciones.find(u => u.id === maquina.ubicacionId);
+          const incidentesMaquina = incidentes.filter(i => i.maquinaId === maquina.id);
+          return {
+            modelo: maquina.modelo,
+            tipo: maquina.tipo,
+            ubicacion: ubicacion?.nombre || 'Desconocida',
+            estado: maquina.estado,
+            totalIncidentes: incidentesMaquina.length,
+            repuestosUsados: incidentesMaquina.flatMap(i => i.repuestosUtilizados.map(r => r.repuestoId))
+          };
+        })
       };
 
       const prompt = `
-Eres un experto en mantenimiento industrial. Analiza estos datos y proporciona recomendaciones específicas sobre qué repuestos necesito pedir urgentemente y consejos de optimización.
+Eres un experto en mantenimiento de impresoras y equipos de oficina. Analiza estos datos y proporciona recomendaciones específicas sobre qué repuestos necesito pedir urgentemente.
+
+IMPORTANTE: NO consideres cartuchos de tinta, toner o consumibles en las recomendaciones. Solo enfócate en repuestos mecánicos y componentes.
 
 DATOS DE REPUESTOS:
 ${JSON.stringify(datosAnalisis.repuestos, null, 2)}
@@ -74,6 +125,25 @@ ${JSON.stringify(datosAnalisis.ubicaciones, null, 2)}
 
 DATOS DE INCIDENTES:
 ${JSON.stringify(datosAnalisis.incidentes, null, 2)}
+
+ANÁLISIS REQUERIDO:
+1. Identifica las máquinas más repetidas y sus repuestos específicos
+2. Analiza la frecuencia de fallas por tipo de máquina (Samsung, Lexmark, HP)
+3. Considera la ubicación geográfica de los incidentes y patrones regionales
+4. Calcula qué repuestos se agotarán pronto basado en el patrón de uso
+5. Sugiere cantidades específicas considerando el stock actual y la demanda
+6. Analiza qué ubicaciones tienen más problemas y por qué
+7. Identifica patrones de fallas por técnico y ubicación
+8. Considera la proximidad geográfica entre ubicaciones para optimizar rutas
+
+REGLAS ESPECÍFICAS:
+- Cada máquina tiene sus propios repuestos específicos (fusor, retard, rodillos, pickup, etc.)
+- Las máquinas Samsung tienen componentes diferentes a Lexmark
+- Considera la cantidad de máquinas por ubicación
+- Analiza patrones de fallas por ubicación geográfica
+- Identifica ubicaciones problemáticas que requieren más atención
+- Considera la experiencia del técnico en el análisis
+- NO incluyas cartuchos, toner o consumibles en las recomendaciones
 
 Responde SOLO con JSON válido en esta estructura exacta:
 {
@@ -85,9 +155,11 @@ Responde SOLO con JSON válido en esta estructura exacta:
   "repuestosCriticos": [
     {
       "nombre": "Nombre exacto del repuesto",
-      "razon": "Por qué es crítico (ej: alto uso, agotamiento inminente)",
-      "accion": "Acción específica (ej: pedir 10 unidades urgentemente)",
-      "urgencia": "alta"
+      "razon": "Por qué es crítico (ej: alto uso en máquinas Samsung, agotamiento inminente)",
+      "accion": "Acción específica (ej: pedir 15 unidades para Samsung SL-M4020ND)",
+      "urgencia": "alta",
+      "maquinasAfectadas": ["Samsung SL-M4020ND", "Samsung SL-M5370LX"],
+      "ubicacionesCriticas": ["Esteban Echeverría", "Exologistica"]
     }
   ],
   "tendencias": [
@@ -97,15 +169,25 @@ Responde SOLO con JSON válido en esta estructura exacta:
   "optimizaciones": [
     "Optimización específica 1",
     "Optimización específica 2"
-  ]
+  ],
+  "analisisMaquinas": {
+    "maquinasMasRepetidas": [
+      {
+        "modelo": "Samsung SL-M4020ND",
+        "cantidad": 2,
+        "repuestosCriticos": ["Fusor", "Rubber", "Pickup"],
+        "frecuenciaFallas": 3
+      }
+    ],
+    "patronesFallas": [
+      {
+        "tipoFalla": "Correctivo",
+        "frecuencia": 5,
+        "repuestosComunes": ["Fusor", "Rubber"]
+      }
+    ]
+  }
 }
-
-ENFOQUE ESPECIAL:
-1. Identifica repuestos con mayor frecuencia de uso
-2. Calcula qué repuestos se agotarán pronto
-3. Sugiere cantidades específicas a pedir
-4. Analiza patrones de fallas por ubicación
-5. Recomienda stock mínimo por repuesto
 
 Responde SOLO con el JSON, sin explicaciones adicionales.
 `;
@@ -269,7 +351,17 @@ Responde SOLO con el JSON, sin explicaciones adicionales.
                     </span>
                   </div>
                   <p className="text-sm mb-2">{repuesto.razon}</p>
-                  <p className="text-sm font-medium">{repuesto.accion}</p>
+                  <p className="text-sm font-medium mb-2">{repuesto.accion}</p>
+                  {repuesto.maquinasAfectadas && repuesto.maquinasAfectadas.length > 0 && (
+                    <div className="text-xs text-gray-600 mb-1">
+                      <strong>Máquinas afectadas:</strong> {repuesto.maquinasAfectadas.join(', ')}
+                    </div>
+                  )}
+                  {repuesto.ubicacionesCriticas && repuesto.ubicacionesCriticas.length > 0 && (
+                    <div className="text-xs text-gray-600">
+                      <strong>Ubicaciones críticas:</strong> {repuesto.ubicacionesCriticas.join(', ')}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -322,6 +414,115 @@ Responde SOLO con el JSON, sin explicaciones adicionales.
               ))}
             </ul>
           </div>
+
+          {/* Análisis de Máquinas */}
+          {analisis.analisisMaquinas && (
+            <>
+              <div className="bg-indigo-50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="w-5 h-5 text-indigo-500" />
+                  <h3 className="font-semibold text-indigo-800">Máquinas Más Repetidas</h3>
+                </div>
+                <div className="space-y-3">
+                  {analisis.analisisMaquinas.maquinasMasRepetidas.map((maquina, index) => (
+                    <div key={index} className="bg-white rounded-lg p-3 border border-indigo-200">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-indigo-900">{maquina.modelo}</h4>
+                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full text-xs font-medium">
+                          {maquina.cantidad} unidades
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        Fallas: {maquina.frecuenciaFallas} | Repuestos críticos: {maquina.repuestosCriticos.join(', ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-cyan-50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-5 h-5 text-cyan-500" />
+                  <h3 className="font-semibold text-cyan-800">Patrones de Fallas</h3>
+                </div>
+                <div className="space-y-2">
+                  {analisis.analisisMaquinas.patronesFallas.map((patron, index) => (
+                    <div key={index} className="bg-white rounded-lg p-3 border border-cyan-200">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-medium text-cyan-900">{patron.tipoFalla}</span>
+                        <span className="bg-cyan-100 text-cyan-800 px-2 py-1 rounded-full text-xs font-medium">
+                          {patron.frecuencia} veces
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Repuestos comunes: {patron.repuestosComunes.join(', ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Análisis de Ubicaciones */}
+          {analisis.analisisUbicaciones && (
+            <>
+              <div className="bg-red-50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                  <h3 className="font-semibold text-red-800">Ubicaciones Problemáticas</h3>
+                </div>
+                <div className="space-y-3">
+                  {analisis.analisisUbicaciones.ubicacionesProblematicas.map((ubicacion, index) => (
+                    <div key={index} className="bg-white rounded-lg p-3 border border-red-200">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-medium text-red-900">{ubicacion.nombre}</h4>
+                          <p className="text-sm text-gray-600">{ubicacion.empresa}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
+                            {ubicacion.totalIncidentes} incidentes
+                          </span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Dificultad: {ubicacion.dificultadPromedio.toFixed(1)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        <strong>Problemas comunes:</strong> {ubicacion.problemasComunes.join(', ')}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <strong>Recomendaciones:</strong> {ubicacion.recomendaciones.join(', ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-teal-50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="w-5 h-5 text-teal-500" />
+                  <h3 className="font-semibold text-teal-800">Patrones Geográficos</h3>
+                </div>
+                <div className="space-y-2">
+                  {analisis.analisisUbicaciones.patronesGeograficos.map((patron, index) => (
+                    <div key={index} className="bg-white rounded-lg p-3 border border-teal-200">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-medium text-teal-900">{patron.region}</span>
+                        <span className="bg-teal-100 text-teal-800 px-2 py-1 rounded-full text-xs font-medium">
+                          {patron.totalIncidentes} incidentes
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Problemas comunes: {patron.problemasComunes.join(', ')}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 

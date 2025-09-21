@@ -137,10 +137,10 @@ const EstadisticasRepuestos: React.FC<EstadisticasRepuestosProps> = ({ filtros }
         <div className="bg-yellow-50 p-3 md:p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
-            <span className="text-xs md:text-sm font-medium text-yellow-700">Total Repuestos</span>
+            <span className="text-xs md:text-sm font-medium text-yellow-700">Promedio por Repuesto</span>
           </div>
           <p className="text-lg md:text-2xl font-bold text-yellow-900">
-            {estadisticas.reduce((sum, s) => sum + s.totalUtilizado, 0)}
+            {estadisticas.length > 0 ? Math.round(estadisticas.reduce((sum, s) => sum + s.totalUtilizado, 0) / estadisticas.length) : 0}
           </p>
         </div>
         

@@ -51,6 +51,46 @@ class DataService {
           latitud: -34.8372310,
           longitud: -58.4108440,
           empresa: 'Dia'
+        },
+        {
+          id: '6',
+          nombre: 'Molino Cañuelas SPEGAZZINI',
+          direccion: 'Colect. Au. Ezeiza-Cañuelas Km 44',
+          latitud: -34.900295,
+          longitud: -58.616422,
+          empresa: 'CARLOS SPEGAZZINI'
+        },
+        {
+          id: '7',
+          nombre: 'Exologistica Carrier',
+          direccion: 'Lagos Garcia 4470',
+          latitud: -34.76824,
+          longitud: -58.480285,
+          empresa: 'ESTEBAN ECHEVERRIA'
+        },
+        {
+          id: '8',
+          nombre: 'Exologistica PLEER',
+          direccion: 'Ruta De La Tradicion 7732',
+          latitud: -34.741992,
+          longitud: -58.498072,
+          empresa: 'ESTEBAN ECHEVERRIA'
+        },
+        {
+          id: '9',
+          nombre: 'Biogenesis Bago - Planta',
+          direccion: '29 de abril 1251',
+          latitud: -34.797531,
+          longitud: -58.47131,
+          empresa: 'MONTE GRANDE'
+        },
+        {
+          id: '10',
+          nombre: 'Saputo Versacold Mercado Central',
+          direccion: 'Av. Circunvalación 2251',
+          latitud: -34.714174,
+          longitud: -58.492927,
+          empresa: 'TAPIALES'
         }
       ] as Ubicacion[],
       maquinas: [
@@ -58,7 +98,12 @@ class DataService {
         { id: '2', nombre: 'Lexmark x656', tipo: 'Impresora', modelo: 'x656', ubicacionId: '2', estado: 'operativa' },
         { id: '3', nombre: 'Samsung CLP 680N', tipo: 'Impresora', modelo: 'CLP 680N', ubicacionId: '3', estado: 'operativa' },
         { id: '4', nombre: 'Samsung Mono 4072', tipo: 'Impresora', modelo: 'Mono 4072', ubicacionId: '4', estado: 'operativa' },
-        { id: '5', nombre: 'HP e52645dn', tipo: 'Impresora', modelo: 'e52645dn', ubicacionId: '5', estado: 'operativa' }
+        { id: '5', nombre: 'HP e52645dn', tipo: 'Impresora', modelo: 'e52645dn', ubicacionId: '5', estado: 'operativa' },
+        { id: '6', nombre: 'Lexmark Optra X656de', tipo: 'MFP Mono', modelo: 'Optra X656de', ubicacionId: '6', estado: 'operativa' },
+        { id: '7', nombre: 'Samsung SL-M4020ND', tipo: 'PRT Mono', modelo: 'SL-M4020ND', ubicacionId: '7', estado: 'operativa' },
+        { id: '8', nombre: 'Samsung SL-M5370LX', tipo: 'MFP Mono', modelo: 'SL-M5370LX', ubicacionId: '8', estado: 'operativa' },
+        { id: '9', nombre: 'Samsung SL-M5360RX', tipo: 'MFP Mono', modelo: 'SL-M5360RX', ubicacionId: '9', estado: 'operativa' },
+        { id: '10', nombre: 'Samsung SL-M4020ND', tipo: 'PRT Mono', modelo: 'SL-M4020ND', ubicacionId: '10', estado: 'operativa' }
       ] as Maquina[],
       repuestos: [
         { id: '1', nombre: 'Fusor', codigo: 'FUS-001', categoria: 'Componentes', precio: 0 },
@@ -75,7 +120,12 @@ class DataService {
         { id: '12', nombre: 'Rubber', codigo: 'RUB-001', categoria: 'Componentes', precio: 0 },
         { id: '13', nombre: 'Rodillo Pickup', codigo: 'ROD-001', categoria: 'Componentes', precio: 0 },
         { id: '14', nombre: 'Gomas', codigo: 'GOM-001', categoria: 'Componentes', precio: 0 },
-        { id: '15', nombre: 'Toner', codigo: 'TON-001', categoria: 'Consumibles', precio: 0 }
+        { id: '15', nombre: 'Toner', codigo: 'TON-001', categoria: 'Consumibles', precio: 0 },
+        { id: '16', nombre: 'Rodillos Pick UP Tray 2', codigo: 'ROD-PU-002', categoria: 'Componentes', precio: 0 },
+        { id: '17', nombre: 'Unidad de Imagen', codigo: 'UNI-IMG-001', categoria: 'Componentes', precio: 0 },
+        { id: '18', nombre: 'Sensor CTD', codigo: 'SEN-CTD-001', categoria: 'Componentes', precio: 0 },
+        { id: '19', nombre: 'Cover Cassette', codigo: 'COV-CAS-001', categoria: 'Componentes', precio: 0 },
+        { id: '20', nombre: 'Duplex', codigo: 'DUP-001', categoria: 'Componentes', precio: 0 }
       ] as Repuesto[],
       incidentes: [
         {
@@ -211,6 +261,94 @@ class DataService {
           tecnico: 'Técnico',
           observaciones: 'Gomas gastadas, toner en la zona de impresion y limpieza general',
           serieEquipo: 'HPE52645DN-001'
+        },
+        {
+          id: '10',
+          fecha: '2025-09-17',
+          ubicacionId: '6',
+          maquinaId: '6',
+          descripcion: 'Cambio de fusor y rodillos pick UP tray 2(adicional), pruebas de impresion con el usuario',
+          tipoFalla: 'Correctivo',
+          dificultad: 'media',
+          tiempoReparacion: 4,
+          repuestosUtilizados: [
+            { repuestoId: '1', cantidad: 1 },
+            { repuestoId: '16', cantidad: 1 }
+          ],
+          tecnico: 'Cinthia Nieva',
+          observaciones: 'Cambio de fusor y rodillos pick UP tray 2(adicional), pruebas de impresion con el usuario',
+          serieEquipo: '7946PGC'
+        },
+        {
+          id: '11',
+          fecha: '2025-09-18',
+          ubicacionId: '7',
+          maquinaId: '7',
+          descripcion: 'Limpieza del equipo, cambio de rubber, fusor y duplex',
+          tipoFalla: 'Correctivo',
+          dificultad: 'media',
+          tiempoReparacion: 2,
+          repuestosUtilizados: [
+            { repuestoId: '12', cantidad: 1 },
+            { repuestoId: '1', cantidad: 1 },
+            { repuestoId: '20', cantidad: 1 }
+          ],
+          tecnico: 'Elias Vidal',
+          observaciones: 'Limpieza del equipo, cambio de rubber, fusor y duplex',
+          serieEquipo: 'ZDBXBJCH100058T'
+        },
+        {
+          id: '12',
+          fecha: '2025-09-19',
+          ubicacionId: '8',
+          maquinaId: '8',
+          descripcion: 'Limpieza del equipo, cambio de fusor y pick UPs, reseteo de valores de mantenimiento, limpieza de sensor ctd',
+          tipoFalla: 'Correctivo',
+          dificultad: 'media',
+          tiempoReparacion: 1,
+          repuestosUtilizados: [
+            { repuestoId: '1', cantidad: 1 },
+            { repuestoId: '2', cantidad: 1 },
+            { repuestoId: '18', cantidad: 1 }
+          ],
+          tecnico: 'Leonel',
+          observaciones: 'Limpieza del equipo, cambio de fusor y pick UPs, reseteo de valores de mantenimiento, limpieza de sensor ctd',
+          serieEquipo: '076UBJFG80006JV'
+        },
+        {
+          id: '13',
+          fecha: '2025-09-18',
+          ubicacionId: '9',
+          maquinaId: '9',
+          descripcion: 'Se realizó cambio de cartucho y unidad de imagen. Falla: Imprime de manera defectuosa, muy clarito.',
+          tipoFalla: 'Correctivo',
+          dificultad: 'media',
+          tiempoReparacion: 1,
+          repuestosUtilizados: [
+            { repuestoId: '17', cantidad: 1 }
+          ],
+          tecnico: 'Martiniano Rossetto',
+          observaciones: 'Se realizó cambio de cartucho y unidad de imagen. Falla: Imprime de manera defectuosa, muy clarito.',
+          serieEquipo: 'C52BJFK20000SX'
+        },
+        {
+          id: '14',
+          fecha: '2025-09-18',
+          ubicacionId: '10',
+          maquinaId: '10',
+          descripcion: 'Limpieza, cambio de rubber rettard, cover cassette, lubricación de duplex, reseteo de mantenimiento. Se sacó etiqueta de tapa trasera porque tenía la serie de otro equipo.',
+          tipoFalla: 'Correctivo',
+          dificultad: 'media',
+          tiempoReparacion: 3,
+          repuestosUtilizados: [
+            { repuestoId: '12', cantidad: 1 },
+            { repuestoId: '3', cantidad: 1 },
+            { repuestoId: '19', cantidad: 1 },
+            { repuestoId: '20', cantidad: 1 }
+          ],
+          tecnico: 'Ariel Salas',
+          observaciones: 'Limpieza, cambio de rubber rettard, cover cassette, lubricación de duplex, reseteo de mantenimiento. Se sacó etiqueta de tapa trasera porque tenía la serie de otro equipo.',
+          serieEquipo: 'ZDBXBJCH2000QSF'
         }
       ] as Incidente[]
     };

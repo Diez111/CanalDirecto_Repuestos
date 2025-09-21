@@ -62,7 +62,7 @@ function App() {
   console.log('Vista actual:', vistaActual);
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${modoOscuro ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${modoOscuro ? 'bg-black' : 'bg-gray-100'}`}>
       {/* Navegación móvil */}
       <NavegacionMovil
         vistaActual={vistaActual}
@@ -73,7 +73,7 @@ function App() {
       />
 
       {/* Header - Visible en todas las pantallas */}
-      <header className={`shadow-sm border-b transition-colors duration-300 ${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <header className={`shadow-sm border-b transition-colors duration-300 ${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ function App() {
                 onClick={() => setModoOscuro(!modoOscuro)}
                 className={`p-2 rounded-lg transition-colors ${
                   modoOscuro 
-                    ? 'text-yellow-400 hover:text-yellow-300 hover:bg-gray-700' 
+                    ? 'text-yellow-400 hover:text-yellow-300 hover:bg-gray-800' 
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
                 title={modoOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
@@ -99,7 +99,7 @@ function App() {
                 onClick={recargarDatos}
                 className={`p-2 rounded-lg transition-colors ${
                   modoOscuro 
-                    ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800' 
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
                 title="Recargar datos"
@@ -155,7 +155,7 @@ function App() {
       </header>
 
       {/* Navegación de vistas - Solo visible en desktop */}
-      <nav className={`hidden lg:block border-b transition-colors duration-300 ${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+      <nav className={`hidden lg:block border-b transition-colors duration-300 ${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             <button
@@ -163,7 +163,9 @@ function App() {
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 vistaActual === 'mapa'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : modoOscuro 
+                    ? 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               <Map className="w-4 h-4" />
@@ -175,7 +177,9 @@ function App() {
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 vistaActual === 'estadisticas'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : modoOscuro 
+                    ? 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
@@ -187,7 +191,9 @@ function App() {
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 vistaActual === 'graficos'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : modoOscuro 
+                    ? 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
@@ -195,23 +201,13 @@ function App() {
             </button>
 
             <button
-              onClick={() => setVistaActual('analisis')}
-              className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                vistaActual === 'analisis'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Análisis con IA
-            </button>
-
-            <button
               onClick={() => setVistaActual('stockear')}
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 vistaActual === 'stockear'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : modoOscuro 
+                    ? 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               <Package className="w-4 h-4" />
@@ -223,7 +219,9 @@ function App() {
               className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 vistaActual === 'exportar'
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : modoOscuro 
+                    ? 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
               <Database className="w-4 h-4" />
@@ -239,28 +237,28 @@ function App() {
           <div className="space-y-4 lg:space-y-6">
             {/* Resumen de estadísticas */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
-              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
+              <div className={`${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-blue-600">
                   {estadisticas.reduce((sum, s) => sum + s.totalIncidentes, 0)}
                 </div>
                 <div className={`text-xs lg:text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Incidentes</div>
               </div>
               
-              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
+              <div className={`${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-green-600">
                   {estadisticas.length}
                 </div>
                 <div className={`text-xs lg:text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Ubicaciones</div>
               </div>
               
-              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
+              <div className={`${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-orange-600">
                   {estadisticas.reduce((sum, s) => sum + s.totalMaquinas, 0)}
                 </div>
                 <div className={`text-xs lg:text-sm ${modoOscuro ? 'text-gray-300' : 'text-gray-600'}`}>Total Máquinas</div>
               </div>
               
-              <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
+              <div className={`${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-3 lg:p-4 rounded-lg shadow border`}>
                 <div className="text-lg lg:text-2xl font-bold text-purple-600">
                   {estadisticas.reduce((sum, s) => sum + s.totalRepuestos, 0)}
                 </div>
@@ -269,8 +267,8 @@ function App() {
             </div>
 
             {/* Mapa interactivo */}
-            <div className={`${modoOscuro ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-lg overflow-hidden border`}>
-              <div className={`p-4 border-b ${modoOscuro ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-gray-50'}`}>
+            <div className={`${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow-lg overflow-hidden border`}>
+              <div className={`p-4 border-b ${modoOscuro ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'}`}>
                 <h2 className={`text-lg font-semibold ${modoOscuro ? 'text-white' : 'text-gray-800'} flex items-center gap-2`}>
                   <Map className="w-5 h-5 text-blue-500" />
                   Mapa de Incidentes
@@ -298,9 +296,6 @@ function App() {
           <GraficosDinamicos key={versionDatos} filtros={filtros} />
         )}
 
-        {vistaActual === 'analisis' && (
-          <AnalisisIA key={versionDatos} filtros={filtros} onDatosActualizados={actualizarTodosLosDatos} />
-        )}
 
         {vistaActual === 'stockear' && (
           <RepuestosStockear key={versionDatos} modoOscuro={modoOscuro} />
