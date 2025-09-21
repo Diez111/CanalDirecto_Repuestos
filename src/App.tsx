@@ -312,7 +312,7 @@ function App() {
         )}
 
         {vistaActual === 'estadisticas' && (
-          <EstadisticasRepuestos key={versionDatos} filtros={filtros} />
+          <EstadisticasRepuestos key={versionDatos} filtros={filtros} modoOscuro={modoOscuro} />
         )}
 
         {vistaActual === 'graficos' && (

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Download, Upload, FileText, AlertTriangle, CheckCircle, Database, Archive } from 'lucide-react';
+import { Download, Upload, FileText, AlertTriangle, CheckCircle, Database, Archive, Brain, Loader } from 'lucide-react';
 import { dataService } from '../services/dataService';
-// import { getBackgroundClasses, getTextClasses, getSubTextClasses, getCardClasses, getBorderClasses, getButtonClasses, getInputClasses, getSelectClasses } from '../utils/colorUtils';
+import { getBackgroundClasses, getTextClasses, getSubTextClasses, getCardClasses, getBorderClasses, getButtonClasses, getInputClasses } from '../utils/colorUtils';
 
 interface ExportarImportarProps {
   modoOscuro?: boolean;
@@ -11,6 +11,8 @@ interface ExportarImportarProps {
 const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false, onDatosActualizados }) => {
   const [mensaje, setMensaje] = useState<{ tipo: 'success' | 'error' | 'info', texto: string } | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [textoIA, setTextoIA] = useState('');
+  const [procesandoIA, setProcesandoIA] = useState(false);
 
   // Funciones de estilo para modo oscuro
   const getTextClasses = () => `${modoOscuro ? 'text-white' : 'text-gray-900'}`;
@@ -152,6 +154,161 @@ const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false,
       } finally {
         setCargando(false);
       }
+    }
+  };
+
+  const procesarTextoConIA = async () => {
+    if (!textoIA.trim()) {
+      mostrarMensaje('error', 'Por favor, ingrese el texto a procesar');
+      return;
+    }
+
+    try {
+      setProcesandoIA(true);
+      
+      const prompt = `Analiza el siguiente texto y extrae información sobre incidentes de impresoras, ubicaciones, máquinas y repuestos. 
+
+TEXTO A ANALIZAR:
+${textoIA}
+
+INSTRUCCIONES:
+1. Identifica incidentes de impresoras con: fecha, ubicación, máquina, descripción, tipo de falla, dificultad, tiempo de reparación, repuestos utilizados, técnico, observaciones
+2. Identifica ubicaciones con: nombre, dirección, empresa, coordenadas (si están disponibles)
+3. Identifica máquinas con: nombre, tipo, modelo, ubicación, estado
+4. Identifica repuestos con: nombre, código, categoría, precio
+
+Responde SOLO con un JSON válido en este formato:
+{
+  "incidentes": [
+    {
+      "id": "generar_id_unico",
+      "fecha": "YYYY-MM-DD",
+      "ubicacionId": "id_ubicacion",
+      "maquinaId": "id_maquina", 
+      "descripcion": "descripción del incidente",
+      "tipoFalla": "tipo de falla",
+      "dificultad": "baja|media|alta|critica",
+      "tiempoReparacion": número_horas,
+      "repuestosUtilizados": [{"repuestoId": "id", "cantidad": número}],
+      "tecnico": "nombre técnico",
+      "observaciones": "observaciones adicionales",
+      "serieEquipo": "serie si está disponible"
+    }
+  ],
+  "ubicaciones": [
+    {
+      "id": "generar_id_unico",
+      "nombre": "nombre ubicación",
+      "direccion": "dirección completa",
+      "latitud": número_coordenada,
+      "longitud": número_coordenada,
+      "empresa": "nombre empresa"
+    }
+  ],
+  "maquinas": [
+    {
+      "id": "generar_id_unico",
+      "nombre": "nombre máquina",
+      "tipo": "Impresora|MFP|etc",
+      "modelo": "modelo específico",
+      "ubicacionId": "id_ubicacion",
+      "estado": "operativa|reparacion|fuera_servicio"
+    }
+  ],
+  "repuestos": [
+    {
+      "id": "generar_id_unico",
+      "nombre": "nombre repuesto",
+      "codigo": "código del repuesto",
+      "categoria": "categoría",
+      "precio": número_precio
+    }
+  ]
+}
+
+IMPORTANTE: 
+- Genera IDs únicos para cada elemento
+- Si no encuentras información específica, omite ese campo
+- Asegúrate de que las relaciones entre elementos sean consistentes
+- Usa coordenadas aproximadas si no están disponibles
+- Para dificultad, usa: "baja" (1-2 horas), "media" (2-4 horas), "alta" (4-8 horas), "critica" (más de 8 horas)`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_DEEPSEEK_API_KEY || 'sk-0ba4714c7ae44432939b432334a3e5b7'}`,
+          'User-Agent': 'CanalDirecto-Repuestos/1.0'
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 4000,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const contenido = data.choices[0].message.content;
+      
+      try {
+        const datosProcesados = JSON.parse(contenido);
+        
+        // Validar estructura básica
+        if (!datosProcesados.incidentes || !Array.isArray(datosProcesados.incidentes)) {
+          throw new Error('Estructura de datos inválida');
+        }
+
+        // Obtener datos existentes
+        const incidentesExistentes = dataService.getIncidentes();
+        const ubicacionesExistentes = dataService.getUbicaciones();
+        const maquinasExistentes = dataService.getMaquinas();
+        const repuestosExistentes = dataService.getRepuestos();
+
+        // Combinar datos existentes con nuevos
+        const nuevosIncidentes = [...incidentesExistentes, ...datosProcesados.incidentes];
+        const nuevasUbicaciones = [...ubicacionesExistentes, ...(datosProcesados.ubicaciones || [])];
+        const nuevasMaquinas = [...maquinasExistentes, ...(datosProcesados.maquinas || [])];
+        const nuevosRepuestos = [...repuestosExistentes, ...(datosProcesados.repuestos || [])];
+
+        // Guardar en localStorage
+        localStorage.setItem('incidentes_data', JSON.stringify(nuevosIncidentes));
+        localStorage.setItem('ubicaciones_data', JSON.stringify(nuevasUbicaciones));
+        localStorage.setItem('maquinas_data', JSON.stringify(nuevasMaquinas));
+        localStorage.setItem('repuestos_data', JSON.stringify(nuevosRepuestos));
+
+        // Notificar actualización
+        if (onDatosActualizados) {
+          onDatosActualizados();
+        }
+
+        const totalIncidentes = datosProcesados.incidentes.length;
+        const totalUbicaciones = datosProcesados.ubicaciones?.length || 0;
+        const totalMaquinas = datosProcesados.maquinas?.length || 0;
+        const totalRepuestos = datosProcesados.repuestos?.length || 0;
+
+        mostrarMensaje('success', 
+          `Datos procesados exitosamente: ${totalIncidentes} incidentes, ${totalUbicaciones} ubicaciones, ${totalMaquinas} máquinas, ${totalRepuestos} repuestos`
+        );
+
+        // Limpiar el texto
+        setTextoIA('');
+
+      } catch (parseError) {
+        console.error('Error al parsear respuesta IA:', parseError);
+        mostrarMensaje('error', 'Error al procesar la respuesta de la IA. Verifique que el texto contenga información válida.');
+      }
+
+    } catch (error) {
+      console.error('Error en procesamiento IA:', error);
+      mostrarMensaje('error', 'Error al conectar con la IA. Intente nuevamente.');
+    } finally {
+      setProcesandoIA(false);
     }
   };
 
@@ -303,6 +460,74 @@ const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false,
         </div>
       </div>
 
+      {/* Importación con IA */}
+      <div className={`${getCardClasses()} rounded-lg p-6 border`}>
+        <h3 className={`text-lg font-semibold ${getTextClasses()} mb-4 flex items-center gap-2`}>
+          <Brain className="w-5 h-5 text-purple-500" />
+          Importación Inteligente con IA
+        </h3>
+        <p className={`${getSubTextClasses()} mb-4`}>
+          Ingrese texto con información de incidentes, ubicaciones, máquinas o repuestos. 
+          La IA analizará y extraerá automáticamente los datos estructurados.
+        </p>
+        
+        <div className="space-y-4">
+          <div>
+            <label className={`block text-sm font-medium ${getTextClasses()} mb-2`}>
+              Texto a Procesar
+            </label>
+            <textarea
+              value={textoIA}
+              onChange={(e) => setTextoIA(e.target.value)}
+              placeholder="Ejemplo: 'El 15/09/2024 en Mercado Central, la impresora Samsung 4020 tuvo una falla de fusor. El técnico Juan Pérez la reparó en 2 horas usando 1 fusor y 2 rodillos pickup...'"
+              className={`${getInputClasses(modoOscuro)} w-full h-32 p-3 rounded-md border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none`}
+              disabled={procesandoIA}
+            />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={procesarTextoConIA}
+              disabled={procesandoIA || !textoIA.trim()}
+              className={getButtonClasses('primary')}
+            >
+              {procesandoIA ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Procesando con IA...
+                </>
+              ) : (
+                <>
+                  <Brain className="w-4 h-4" />
+                  Procesar con IA
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={() => setTextoIA('')}
+              disabled={procesandoIA}
+              className={getButtonClasses('secondary')}
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+        
+        <div className={`mt-4 p-3 rounded-md ${modoOscuro ? 'bg-gray-800' : 'bg-blue-50'} border ${modoOscuro ? 'border-gray-600' : 'border-blue-200'}`}>
+          <h4 className={`text-sm font-medium ${getTextClasses()} mb-2`}>
+            💡 Ejemplos de texto que puede procesar:
+          </h4>
+          <ul className={`text-xs ${getSubTextClasses()} space-y-1`}>
+            <li>• Reportes de incidentes con fechas, ubicaciones y técnicos</li>
+            <li>• Listas de máquinas con modelos y ubicaciones</li>
+            <li>• Inventarios de repuestos con códigos y precios</li>
+            <li>• Información de empresas y direcciones</li>
+            <li>• Cualquier texto estructurado con datos del sistema</li>
+          </ul>
+        </div>
+      </div>
+
       {/* Acciones adicionales */}
       <div className={`${getCardClasses()} rounded-lg p-6 border`}>
         <h3 className={`text-lg font-semibold ${getTextClasses()} mb-4 flex items-center gap-2`}>
@@ -336,6 +561,9 @@ const ExportarImportar: React.FC<ExportarImportarProps> = ({ modoOscuro = false,
           </p>
           <p className={`${getSubTextClasses()}`}>
             <strong>Datos incluidos:</strong> Incidentes, ubicaciones, repuestos, máquinas y técnicos
+          </p>
+          <p className={`${getSubTextClasses()}`}>
+            <strong>Importación IA:</strong> Procesa texto libre y extrae datos estructurados automáticamente
           </p>
           <p className={`${getSubTextClasses()}`}>
             <strong>Versión actual:</strong> 1.0
