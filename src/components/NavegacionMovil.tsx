@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Menu, X, Map, BarChart3, Brain, Package, Database, Filter, Plus, RefreshCw } from 'lucide-react';
+// import { getBackgroundClasses, getTextClasses, getSubTextClasses, getCardClasses, getBorderClasses, getButtonClasses } from '../utils/colorUtils';
 
 interface NavegacionMovilProps {
   vistaActual: 'mapa' | 'estadisticas' | 'graficos' | 'analisis' | 'stockear' | 'exportar';

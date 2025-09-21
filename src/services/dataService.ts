@@ -356,44 +356,81 @@ class DataService {
 
   // Inicializar datos si no existen
   private inicializarDatos() {
-    const datos = this.getDatosIniciales();
-    
-    // Forzar actualización de datos para asegurar coordenadas correctas
-    localStorage.setItem(this.STORAGE_KEYS.UBICACIONES, JSON.stringify(datos.ubicaciones));
-    localStorage.setItem(this.STORAGE_KEYS.MAQUINAS, JSON.stringify(datos.maquinas));
-    localStorage.setItem(this.STORAGE_KEYS.REPUESTOS, JSON.stringify(datos.repuestos));
-    localStorage.setItem(this.STORAGE_KEYS.INCIDENTES, JSON.stringify(datos.incidentes));
+    try {
+      // Solo inicializar si no existen datos
+      const ubicacionesExistentes = localStorage.getItem(this.STORAGE_KEYS.UBICACIONES);
+      const maquinasExistentes = localStorage.getItem(this.STORAGE_KEYS.MAQUINAS);
+      const repuestosExistentes = localStorage.getItem(this.STORAGE_KEYS.REPUESTOS);
+      const incidentesExistentes = localStorage.getItem(this.STORAGE_KEYS.INCIDENTES);
+      
+      if (!ubicacionesExistentes || !maquinasExistentes || !repuestosExistentes || !incidentesExistentes) {
+        const datos = this.getDatosIniciales();
+        
+        localStorage.setItem(this.STORAGE_KEYS.UBICACIONES, JSON.stringify(datos.ubicaciones));
+        localStorage.setItem(this.STORAGE_KEYS.MAQUINAS, JSON.stringify(datos.maquinas));
+        localStorage.setItem(this.STORAGE_KEYS.REPUESTOS, JSON.stringify(datos.repuestos));
+        localStorage.setItem(this.STORAGE_KEYS.INCIDENTES, JSON.stringify(datos.incidentes));
+      }
+    } catch (error) {
+      console.error('Error al inicializar datos:', error);
+    }
   }
 
   constructor() {
-    this.inicializarDatos();
+    console.log('DataService constructor ejecutándose...');
+    try {
+      this.inicializarDatos();
+      console.log('DataService inicializado correctamente');
+    } catch (error) {
+      console.error('Error en DataService constructor:', error);
+    }
   }
 
   // Métodos para obtener datos
   getUbicaciones(): Ubicacion[] {
-    const data = localStorage.getItem(this.STORAGE_KEYS.UBICACIONES);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEYS.UBICACIONES);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error al obtener ubicaciones:', error);
+      return [];
+    }
   }
 
   getMaquinas(): Maquina[] {
-    const data = localStorage.getItem(this.STORAGE_KEYS.MAQUINAS);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEYS.MAQUINAS);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error al obtener máquinas:', error);
+      return [];
+    }
   }
 
   getRepuestos(): Repuesto[] {
-    const data = localStorage.getItem(this.STORAGE_KEYS.REPUESTOS);
-    return data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEYS.REPUESTOS);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error al obtener repuestos:', error);
+      return [];
+    }
   }
 
   getIncidentes(filtros?: Filtros): Incidente[] {
-    const data = localStorage.getItem(this.STORAGE_KEYS.INCIDENTES);
-    let incidentes: Incidente[] = data ? JSON.parse(data) : [];
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEYS.INCIDENTES);
+      let incidentes: Incidente[] = data ? JSON.parse(data) : [];
 
-    if (filtros) {
-      incidentes = this.aplicarFiltros(incidentes, filtros);
+      if (filtros) {
+        incidentes = this.aplicarFiltros(incidentes, filtros);
+      }
+
+      return incidentes;
+    } catch (error) {
+      console.error('Error al obtener incidentes:', error);
+      return [];
     }
-
-    return incidentes;
   }
 
   // Métodos para agregar datos
@@ -460,9 +497,13 @@ class DataService {
 
   // Calcular estadísticas por ubicación
   getEstadisticasUbicacion(): EstadisticasUbicacion[] {
-    const incidentes = this.getIncidentes();
-    const ubicaciones = this.getUbicaciones();
-    const maquinas = this.getMaquinas();
+    console.log('getEstadisticasUbicacion ejecutándose...');
+    try {
+      const incidentes = this.getIncidentes();
+      const ubicaciones = this.getUbicaciones();
+      const maquinas = this.getMaquinas();
+      
+      console.log('Datos obtenidos:', { incidentes: incidentes.length, ubicaciones: ubicaciones.length, maquinas: maquinas.length });
 
     return ubicaciones.map(ubicacion => {
       const incidentesUbicacion = incidentes.filter(i => i.ubicacionId === ubicacion.id);
@@ -506,6 +547,10 @@ class DataService {
         ultimaVisita: ultimaVisita > 0 ? new Date(ultimaVisita).toISOString().split('T')[0] : ''
       };
     });
+    } catch (error) {
+      console.error('Error en getEstadisticasUbicacion:', error);
+      return [];
+    }
   }
 
   // Calcular estadísticas de repuestos

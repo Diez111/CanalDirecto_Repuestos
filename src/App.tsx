@@ -5,16 +5,18 @@ import FiltrosMenu from './components/FiltrosMenu';
 import FormularioIncidente from './components/FormularioIncidente';
 import EstadisticasRepuestos from './components/EstadisticasRepuestos';
 import GraficosDinamicos from './components/GraficosDinamicos';
-import AnalisisIA from './components/AnalisisIA';
 import RepuestosStockear from './components/RepuestosStockear';
 import ChatbotIA from './components/ChatbotIA';
 import NavegacionMovil from './components/NavegacionMovil';
 import ExportarImportar from './components/ExportarImportar';
 import { Filtros, Ubicacion, Incidente } from './types';
 import { dataService } from './services/dataService';
+import { getBackgroundClasses, getTextClasses, getSubTextClasses, getCardClasses, getBorderClasses, getButtonClasses } from './utils/colorUtils';
 
 function App() {
-  const [vistaActual, setVistaActual] = useState<'mapa' | 'estadisticas' | 'graficos' | 'analisis' | 'stockear' | 'exportar'>('mapa');
+  console.log('App component is rendering...');
+  
+  const [vistaActual, setVistaActual] = useState<'mapa' | 'estadisticas' | 'graficos' | 'stockear' | 'exportar'>('mapa');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [modoOscuro, setModoOscuro] = useState(false);
@@ -24,18 +26,30 @@ function App() {
   const [versionDatos, setVersionDatos] = useState(0);
 
   useEffect(() => {
+    console.log('useEffect ejecutándose...');
     const cargarEstadisticas = () => {
-      const stats = dataService.getEstadisticasUbicacion();
-      setEstadisticas(stats);
+      try {
+        console.log('Cargando estadísticas...');
+        const stats = dataService.getEstadisticasUbicacion();
+        console.log('Estadísticas cargadas:', stats);
+        setEstadisticas(stats);
+      } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+        setEstadisticas([]);
+      }
     };
     cargarEstadisticas();
-  }, [filtros]);
+  }, [versionDatos]); // Cambiar dependencia para evitar bucle
 
   const handleAgregarIncidente = (incidente: Omit<Incidente, 'id'>) => {
-    dataService.agregarIncidente(incidente);
-    // Recargar estadísticas
-    const stats = dataService.getEstadisticasUbicacion();
-    setEstadisticas(stats);
+    try {
+      dataService.agregarIncidente(incidente);
+      // Recargar estadísticas
+      const stats = dataService.getEstadisticasUbicacion();
+      setEstadisticas(stats);
+    } catch (error) {
+      console.error('Error al agregar incidente:', error);
+    }
   };
 
   const handleUbicacionSeleccionada = (ubicacion: Ubicacion) => {
@@ -43,26 +57,35 @@ function App() {
   };
 
   const recargarDatos = () => {
-    const stats = dataService.getEstadisticasUbicacion();
-    setEstadisticas(stats);
+    try {
+      const stats = dataService.getEstadisticasUbicacion();
+      setEstadisticas(stats);
+    } catch (error) {
+      console.error('Error al recargar datos:', error);
+    }
   };
 
   const actualizarTodosLosDatos = () => {
-    // Recargar estadísticas de ubicación
-    const stats = dataService.getEstadisticasUbicacion();
-    setEstadisticas(stats);
-    
-    // Incrementar versión para forzar re-render de componentes
-    setVersionDatos(prev => prev + 1);
-    
-    console.log('Datos actualizados después del análisis IA');
+    try {
+      // Recargar estadísticas de ubicación
+      const stats = dataService.getEstadisticasUbicacion();
+      setEstadisticas(stats);
+      
+      // Incrementar versión para forzar re-render de componentes
+      setVersionDatos(prev => prev + 1);
+      
+      console.log('Datos actualizados después del análisis IA');
+    } catch (error) {
+      console.error('Error al actualizar datos:', error);
+    }
   };
 
   // Debug: mostrar vista actual
   console.log('Vista actual:', vistaActual);
+  console.log('Renderizando App...');
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${modoOscuro ? 'bg-black' : 'bg-gray-100'}`}>
+    <div className={`min-h-screen transition-colors duration-300 ${getBackgroundClasses(modoOscuro)}`}>
       {/* Navegación móvil */}
       <NavegacionMovil
         vistaActual={vistaActual}
@@ -73,7 +96,7 @@ function App() {
       />
 
       {/* Header - Visible en todas las pantallas */}
-      <header className={`shadow-sm border-b transition-colors duration-300 ${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+      <header className={`shadow-sm border-b transition-colors duration-300 ${getCardClasses(modoOscuro)} ${getBorderClasses(modoOscuro)}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -155,7 +178,7 @@ function App() {
       </header>
 
       {/* Navegación de vistas - Solo visible en desktop */}
-      <nav className={`hidden lg:block border-b transition-colors duration-300 ${modoOscuro ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+      <nav className={`hidden lg:block border-b transition-colors duration-300 ${getCardClasses(modoOscuro)} ${getBorderClasses(modoOscuro)}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             <button
@@ -293,7 +316,7 @@ function App() {
         )}
 
         {vistaActual === 'graficos' && (
-          <GraficosDinamicos key={versionDatos} filtros={filtros} />
+          <GraficosDinamicos key={versionDatos} filtros={filtros} modoOscuro={modoOscuro} />
         )}
 
 

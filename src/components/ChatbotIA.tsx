@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import { getCardClasses, getTextClasses } from '../utils/colorUtils';
 
 interface Mensaje {
   id: string;
@@ -188,7 +189,7 @@ Mantén la respuesta concisa pero completa (máximo 300 palabras) y enfocada ún
                   className={`max-w-[80%] p-3 rounded-lg ${
                     mensaje.tipo === 'usuario'
                       ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      : getCardClasses(false) + ' ' + getTextClasses(false)
                   }`}
                 >
                   <div className="flex items-start gap-2">
@@ -207,7 +208,7 @@ Mantén la respuesta concisa pero completa (máximo 300 palabras) y enfocada ún
             
             {enviando && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 p-3 rounded-lg">
+                <div className={`${getCardClasses(false)} p-3 rounded-lg`}>
                   <div className="flex items-center gap-2">
                     <Bot className="w-4 h-4" />
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -257,7 +258,7 @@ Mantén la respuesta concisa pero completa (máximo 300 palabras) y enfocada ún
                 </button>
               </div>
               
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className={`${getCardClasses(false)} p-4 rounded-lg`}>
                 <h4 className="font-medium text-gray-800 mb-2">Comportamiento de la IA:</h4>
                 <p className="text-sm text-gray-600 mb-4">
                   La IA está especializada en reparación de impresoras Samsung, Lexmark y HP. 

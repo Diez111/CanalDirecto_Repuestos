@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Filter, Calendar, MapPin, User, AlertTriangle, X } from 'lucide-react';
 import { Filtros } from '../types';
 import { dataService } from '../services/dataService';
+// import { getBackgroundClasses, getTextClasses, getSubTextClasses, getCardClasses, getBorderClasses, getButtonClasses, getInputClasses, getSelectClasses } from '../utils/colorUtils';
 
 interface FiltrosMenuProps {
   filtros: Filtros;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, Package, MapPin } from 'lucide-react';
 import { EstadisticasRepuesto } from '../types';
 import { dataService } from '../services/dataService';
+import { getCardClasses, getTextClasses, getSelectClasses } from '../utils/colorUtils';
 
 interface EstadisticasRepuestosProps {
   filtros?: any;
@@ -84,18 +85,18 @@ const EstadisticasRepuestos: React.FC<EstadisticasRepuestosProps> = ({ filtros }
   const maximo = getMaximo();
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
+    <div className={`${getCardClasses(false)} rounded-lg shadow-lg p-4 md:p-6`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-4">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
-          <h2 className="text-lg md:text-xl font-semibold">Estadísticas de Repuestos</h2>
+          <h2 className={`text-lg md:text-xl font-semibold ${getTextClasses(false)}`}>Estadísticas de Repuestos</h2>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2">
           <select
             value={ordenamiento}
             onChange={(e) => setOrdenamiento(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`${getSelectClasses(false)} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
           >
             <option value="cantidad">Por Cantidad</option>
             <option value="frecuencia">Por Frecuencia</option>
@@ -104,7 +105,7 @@ const EstadisticasRepuestos: React.FC<EstadisticasRepuestosProps> = ({ filtros }
           <select
             value={limite}
             onChange={(e) => setLimite(Number(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`${getSelectClasses(false)} text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
           >
             <option value={5}>Top 5</option>
             <option value={10}>Top 10</option>

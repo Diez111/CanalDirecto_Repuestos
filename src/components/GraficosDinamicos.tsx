@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, PieChart, Activity, Clock, Package } from 'lucide-react';
+import { BarChart3, PieChart, Activity, Clock, Package, Brain, AlertTriangle } from 'lucide-react';
 import { EstadisticasUbicacion, EstadisticasRepuesto } from '../types';
 import { dataService } from '../services/dataService';
+import { getCardClasses, getSubTextClasses, getChartColors, getBackgroundClasses, getTextClasses, getBorderClasses, getButtonClasses } from '../utils/colorUtils';
 
 interface GraficosDinamicosProps {
   filtros?: any;
+  modoOscuro?: boolean;
 }
 
-const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros }) => {
+const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros, modoOscuro = false }) => {
   const [estadisticasUbicacion, setEstadisticasUbicacion] = useState<EstadisticasUbicacion[]>([]);
   const [estadisticasRepuestos, setEstadisticasRepuestos] = useState<EstadisticasRepuesto[]>([]);
-  const [tipoGrafico, setTipoGrafico] = useState<'incidentes' | 'maquinas' | 'tiempo' | 'repuestos'>('incidentes');
+  const [tipoGrafico, setTipoGrafico] = useState<'incidentes' | 'maquinas' | 'tiempo' | 'repuestos' | 'fallas'>('incidentes');
+  const [analisisIA, setAnalisisIA] = useState<any>(null);
+  const [cargandoIA, setCargandoIA] = useState(false);
 
   useEffect(() => {
     const cargarDatos = () => {
@@ -20,6 +24,76 @@ const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros }) => {
     cargarDatos();
   }, [filtros]);
 
+  const analizarConIA = async () => {
+    setCargandoIA(true);
+    try {
+      const incidentes = dataService.getIncidentes();
+      const maquinas = dataService.getMaquinas();
+      
+      const prompt = `Analiza los siguientes datos de incidentes y máquinas para generar insights sobre patrones de fallas:
+
+Datos de Incidentes: ${JSON.stringify(incidentes.slice(0, 10))}
+Datos de Máquinas: ${JSON.stringify(maquinas.slice(0, 10))}
+
+Genera un análisis JSON con:
+1. modelosMasPropensos: Array de objetos con {modelo, frecuenciaFallas, severidadPromedio, repuestosCriticos}
+2. patronesTemporales: Objeto con {horasPico, diasCriticos, tendencias}
+3. ubicacionesCriticas: Array de objetos con {ubicacion, incidentes, dificultadPromedio}
+4. recomendaciones: Array de strings con recomendaciones específicas
+
+Responde SOLO con el JSON válido.`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_DEEPSEEK_API_KEY || 'sk-0ba4714c7ae44432939b432334a3e5b7'}`,
+          'User-Agent': 'CanalDirecto-Repuestos/1.0'
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 2000,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error API: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const contenido = data.choices[0].message.content;
+      
+      try {
+        const analisis = JSON.parse(contenido);
+        setAnalisisIA(analisis);
+        localStorage.setItem('analisisGraficosIA', JSON.stringify(analisis));
+      } catch (parseError) {
+        console.error('Error al parsear respuesta IA:', parseError);
+        setAnalisisIA({ error: 'Error al procesar análisis de IA' });
+      }
+    } catch (error) {
+      console.error('Error en análisis IA:', error);
+      setAnalisisIA({ error: 'Error al conectar con IA' });
+    } finally {
+      setCargandoIA(false);
+    }
+  };
+
+  // Cargar análisis previo
+  useEffect(() => {
+    try {
+      const analisisGuardado = localStorage.getItem('analisisGraficosIA');
+      if (analisisGuardado) {
+        setAnalisisIA(JSON.parse(analisisGuardado));
+      }
+    } catch (error) {
+      console.error('Error al cargar análisis previo:', error);
+    }
+  }, []);
+
   const getColorPorDificultad = (dificultad: number): string => {
     if (dificultad <= 1) return '#10B981'; // green
     if (dificultad <= 2) return '#F59E0B'; // yellow
@@ -28,11 +102,98 @@ const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros }) => {
   };
 
   const getColorPorPosicion = (index: number): string => {
-    const colores = [
-      '#EF4444', '#F97316', '#F59E0B', '#10B981', '#3B82F6',
-      '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F59E0B'
-    ];
+    const colores = getChartColors(modoOscuro);
     return colores[index % colores.length];
+  };
+
+  const renderGraficoXY = () => {
+    if (!analisisIA?.modelosMasPropensos) {
+      return (
+        <div className={`text-center py-8 ${getTextClasses(modoOscuro)}`}>
+          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p>Ejecuta el análisis con IA para ver los modelos más propensos a fallar</p>
+        </div>
+      );
+    }
+
+    const datos = analisisIA.modelosMasPropensos.map((modelo: any, index: number) => ({
+      x: modelo.frecuenciaFallas,
+      y: modelo.severidadPromedio,
+      modelo: modelo.modelo,
+      color: getColorPorPosicion(index)
+    }));
+
+    const maxX = Math.max(...datos.map((d: any) => d.x));
+    const maxY = Math.max(...datos.map((d: any) => d.y));
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="text-sm">
+            <span className="font-medium">Eje X:</span> Frecuencia de Fallas
+          </div>
+          <div className="text-sm">
+            <span className="font-medium">Eje Y:</span> Severidad Promedio
+          </div>
+        </div>
+        
+        <div className="relative h-64">
+          <svg viewBox="0 0 400 300" className="w-full h-full">
+            {/* Ejes */}
+            <line x1="50" y1="250" x2="350" y2="250" stroke={modoOscuro ? "#374151" : "#D1D5DB"} strokeWidth="2"/>
+            <line x1="50" y1="50" x2="50" y2="250" stroke={modoOscuro ? "#374151" : "#D1D5DB"} strokeWidth="2"/>
+            
+            {/* Puntos de datos */}
+            {datos.map((dato: any, index: number) => {
+              const x = 50 + (dato.x / maxX) * 300;
+              const y = 250 - (dato.y / maxY) * 200;
+              
+              return (
+                <g key={index}>
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r="6"
+                    fill={dato.color}
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={x}
+                    y={y - 10}
+                    textAnchor="middle"
+                    className={`text-xs ${getTextClasses(modoOscuro)}`}
+                  >
+                    {dato.modelo.split(' ')[0]}
+                  </text>
+                </g>
+              );
+            })}
+            
+            {/* Etiquetas de ejes */}
+            <text x="200" y="290" textAnchor="middle" className={`text-sm ${getSubTextClasses(modoOscuro)}`}>
+              Frecuencia de Fallas
+            </text>
+            <text x="20" y="150" textAnchor="middle" transform="rotate(-90 20 150)" className={`text-sm ${getSubTextClasses(modoOscuro)}`}>
+              Severidad Promedio
+            </text>
+          </svg>
+        </div>
+        
+        {/* Leyenda de modelos */}
+        <div className="grid grid-cols-2 gap-2">
+          {datos.map((dato: any, index: number) => (
+            <div key={index} className="flex items-center gap-2 text-xs">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: dato.color }}
+              ></div>
+              <span className={`truncate ${getTextClasses(modoOscuro)}`}>{dato.modelo}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const renderGraficoBarras = () => {
@@ -54,10 +215,10 @@ const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros }) => {
       <div className="space-y-4">
         {datos.map((dato, index) => (
           <div key={index} className="flex items-center gap-4">
-            <div className="w-32 text-sm font-medium text-gray-700 truncate">
+            <div className={`w-32 text-sm font-medium ${getSubTextClasses(modoOscuro)} truncate`}>
               {dato.nombre}
             </div>
-            <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+            <div className={`flex-1 ${getCardClasses(modoOscuro)} rounded-full h-6 relative`}>
               <div
                 className="h-6 rounded-full flex items-center justify-end pr-2"
                 style={{
@@ -92,7 +253,7 @@ const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros }) => {
       <div className="relative w-64 h-64 mx-auto">
         <svg viewBox="0 0 200 200" className="w-full h-full">
           {datos.map((dato, index) => {
-            const porcentaje = (dato.valor / total) * 100;
+            // const porcentaje = (dato.valor / total) * 100;
             const anguloInicio = (acumulado / total) * 360;
             const anguloFinal = ((acumulado + dato.valor) / total) * 360;
             
@@ -126,132 +287,68 @@ const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros }) => {
         
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-800">{total}</div>
-            <div className="text-sm text-gray-600">Total</div>
+            <div className={`text-2xl font-bold ${getTextClasses(modoOscuro)}`}>{total}</div>
+            <div className={`text-sm ${getSubTextClasses(modoOscuro)}`}>Total</div>
           </div>
         </div>
       </div>
     );
   };
 
-  const renderGraficoLineas = () => {
-    // Simular datos de tendencia por mes
-    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
-    const datos = meses.map((mes, index) => ({
-      mes,
-      incidentes: Math.floor(Math.random() * 20) + 5,
-      repuestos: Math.floor(Math.random() * 15) + 3
-    }));
-
-    const maxIncidentes = Math.max(...datos.map(d => d.incidentes));
-    const maxRepuestos = Math.max(...datos.map(d => d.repuestos));
-
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-          <span className="text-sm text-gray-600">Incidentes</span>
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span className="text-sm text-gray-600">Repuestos</span>
-        </div>
-        
-        <div className="relative h-48">
-          <svg viewBox="0 0 400 200" className="w-full h-full">
-            {/* Línea de incidentes */}
-            <polyline
-              fill="none"
-              stroke="#3B82F6"
-              strokeWidth="3"
-              points={datos.map((d, i) => 
-                `${(i / (datos.length - 1)) * 350 + 25},${200 - (d.incidentes / maxIncidentes) * 150 + 25}`
-              ).join(' ')}
-            />
-            
-            {/* Línea de repuestos */}
-            <polyline
-              fill="none"
-              stroke="#10B981"
-              strokeWidth="3"
-              points={datos.map((d, i) => 
-                `${(i / (datos.length - 1)) * 350 + 25},${200 - (d.repuestos / maxRepuestos) * 150 + 25}`
-              ).join(' ')}
-            />
-            
-            {/* Puntos de datos */}
-            {datos.map((d, i) => (
-              <g key={i}>
-                <circle
-                  cx={(i / (datos.length - 1)) * 350 + 25}
-                  cy={200 - (d.incidentes / maxIncidentes) * 150 + 25}
-                  r="4"
-                  fill="#3B82F6"
-                />
-                <circle
-                  cx={(i / (datos.length - 1)) * 350 + 25}
-                  cy={200 - (d.repuestos / maxRepuestos) * 150 + 25}
-                  r="4"
-                  fill="#10B981"
-                />
-              </g>
-            ))}
-            
-            {/* Etiquetas de meses */}
-            {datos.map((d, i) => (
-              <text
-                key={i}
-                x={(i / (datos.length - 1)) * 350 + 25}
-                y="195"
-                textAnchor="middle"
-                className="text-xs fill-gray-600"
-              >
-                {d.mes}
-              </text>
-            ))}
-          </svg>
-        </div>
-      </div>
-    );
-  };
+  // Función eliminada - renderGraficoLineas ya no se usa
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
+    <div className={`${getBackgroundClasses(modoOscuro)} rounded-lg shadow-lg p-4 md:p-6`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-4">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
-          <h2 className="text-lg md:text-xl font-semibold">Visualizaciones Dinámicas</h2>
+          <h2 className={`text-lg md:text-xl font-semibold ${getTextClasses(modoOscuro)}`}>Visualizaciones Dinámicas</h2>
         </div>
         
         <div className="flex gap-2">
           <select
             value={tipoGrafico}
             onChange={(e) => setTipoGrafico(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${getBorderClasses(modoOscuro)} ${getBackgroundClasses(modoOscuro)} ${getTextClasses(modoOscuro)}`}
           >
             <option value="incidentes">Por Incidentes</option>
             <option value="maquinas">Por Máquinas</option>
             <option value="tiempo">Por Tiempo</option>
             <option value="repuestos">Por Repuestos</option>
+            <option value="fallas">Modelos Propensos a Fallar</option>
           </select>
+          
+          <button
+            onClick={analizarConIA}
+            disabled={cargandoIA}
+            className={`${getButtonClasses(modoOscuro, 'primary')} text-sm`}
+          >
+            <Brain className="w-4 h-4" />
+            {cargandoIA ? 'Analizando...' : 'Análisis IA'}
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Gráfico de barras por ubicación */}
-        <div className="bg-gray-50 rounded-lg p-3 md:p-4">
+        <div className={`${getCardClasses(modoOscuro)} rounded-lg p-3 md:p-4`}>
           <div className="flex items-center gap-2 mb-3 md:mb-4">
             <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
-            <h3 className="font-medium text-sm md:text-base">Ubicaciones - {tipoGrafico === 'incidentes' ? 'Incidentes' :
+            <h3 className={`font-medium text-sm md:text-base ${getTextClasses(modoOscuro)}`}>
+              {tipoGrafico === 'fallas' ? 'Modelos Propensos a Fallar' : 
+               `Ubicaciones - ${tipoGrafico === 'incidentes' ? 'Incidentes' :
                 tipoGrafico === 'maquinas' ? 'Máquinas' :
-                tipoGrafico === 'tiempo' ? 'Tiempo Promedio' : 'Repuestos'}</h3>
+                tipoGrafico === 'tiempo' ? 'Tiempo Promedio' : 'Repuestos'}`}
+            </h3>
           </div>
-          {renderGraficoBarras()}
+          {tipoGrafico === 'fallas' ? renderGraficoXY() : renderGraficoBarras()}
         </div>
 
         {/* Gráfico circular de repuestos */}
-        <div className="bg-gray-50 rounded-lg p-3 md:p-4">
+        <div className={`${getCardClasses(modoOscuro)} rounded-lg p-3 md:p-4`}>
           <div className="flex items-center gap-2 mb-3 md:mb-4">
             <PieChart className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
-            <h3 className="font-medium text-sm md:text-base">Distribución de Repuestos</h3>
+            <h3 className={`font-medium text-sm md:text-base ${getTextClasses(modoOscuro)}`}>Distribución de Repuestos</h3>
           </div>
           {renderGraficoCircular()}
           
@@ -263,56 +360,71 @@ const GraficosDinamicos: React.FC<GraficosDinamicosProps> = ({ filtros }) => {
                   className="w-2 h-2 md:w-3 md:h-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: getColorPorPosicion(index) }}
                 ></div>
-                <span className="truncate">{stat.nombre}</span>
-                <span className="text-gray-500 ml-auto text-xs">{stat.totalUtilizado}</span>
+                <span className={`truncate ${getTextClasses(modoOscuro)}`}>{stat.nombre}</span>
+                <span className={`ml-auto text-xs ${getSubTextClasses(modoOscuro)}`}>{stat.totalUtilizado}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Gráfico de líneas - tendencias */}
-        <div className="bg-gray-50 rounded-lg p-3 md:p-4 lg:col-span-2">
-          <div className="flex items-center gap-2 mb-3 md:mb-4">
-            <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
-            <h3 className="font-medium text-sm md:text-base">Tendencias Mensuales</h3>
+        {/* Análisis con IA */}
+        {analisisIA && !analisisIA.error && (
+          <div className={`${getCardClasses(modoOscuro)} rounded-lg p-3 md:p-4 lg:col-span-2`}>
+            <div className="flex items-center gap-2 mb-3 md:mb-4">
+              <Brain className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
+              <h3 className={`font-medium text-sm md:text-base ${getTextClasses(modoOscuro)}`}>Análisis Inteligente</h3>
+            </div>
+            
+            {analisisIA.recomendaciones && (
+              <div className="space-y-3">
+                <h4 className={`font-medium ${getTextClasses(modoOscuro)}`}>Recomendaciones:</h4>
+                <ul className="space-y-2">
+                  {analisisIA.recomendaciones.map((rec: string, index: number) => (
+                    <li key={index} className={`text-sm ${getSubTextClasses(modoOscuro)} flex items-start gap-2`}>
+                      <span className="text-blue-500 mt-1">•</span>
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-          {renderGraficoLineas()}
-        </div>
+        )}
 
         {/* Métricas rápidas */}
         <div className="lg:col-span-2">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
-            <div className="bg-blue-50 p-3 md:p-4 rounded-lg text-center">
+            <div className={`${modoOscuro ? 'bg-blue-900' : 'bg-blue-50'} p-3 md:p-4 rounded-lg text-center`}>
               <Activity className="w-6 h-6 md:w-8 md:h-8 text-blue-500 mx-auto mb-2" />
-              <div className="text-lg md:text-2xl font-bold text-blue-900">
+              <div className={`text-lg md:text-2xl font-bold ${modoOscuro ? 'text-blue-100' : 'text-blue-900'}`}>
                 {estadisticasUbicacion.reduce((sum, s) => sum + s.totalIncidentes, 0)}
               </div>
-              <div className="text-xs md:text-sm text-blue-700">Total Incidentes</div>
+              <div className={`text-xs md:text-sm ${modoOscuro ? 'text-blue-300' : 'text-blue-700'}`}>Total Incidentes</div>
             </div>
             
-            <div className="bg-green-50 p-3 md:p-4 rounded-lg text-center">
+            <div className={`${modoOscuro ? 'bg-green-900' : 'bg-green-50'} p-3 md:p-4 rounded-lg text-center`}>
               <Package className="w-6 h-6 md:w-8 md:h-8 text-green-500 mx-auto mb-2" />
-              <div className="text-lg md:text-2xl font-bold text-green-900">
+              <div className={`text-lg md:text-2xl font-bold ${modoOscuro ? 'text-green-100' : 'text-green-900'}`}>
                 {estadisticasUbicacion.reduce((sum, s) => sum + s.totalMaquinas, 0)}
               </div>
-              <div className="text-xs md:text-sm text-green-700">Total Máquinas</div>
+              <div className={`text-xs md:text-sm ${modoOscuro ? 'text-green-300' : 'text-green-700'}`}>Total Máquinas</div>
             </div>
             
-            <div className="bg-orange-50 p-3 md:p-4 rounded-lg text-center">
+            <div className={`${modoOscuro ? 'bg-orange-900' : 'bg-orange-50'} p-3 md:p-4 rounded-lg text-center`}>
               <Clock className="w-6 h-6 md:w-8 md:h-8 text-orange-500 mx-auto mb-2" />
-              <div className="text-lg md:text-2xl font-bold text-orange-900">
+              <div className={`text-lg md:text-2xl font-bold ${modoOscuro ? 'text-orange-100' : 'text-orange-900'}`}>
                 {estadisticasUbicacion.length > 0 ? 
                   (estadisticasUbicacion.reduce((sum, s) => sum + s.tiempoPromedioReparacion, 0) / estadisticasUbicacion.length).toFixed(1) : 0}h
               </div>
-              <div className="text-xs md:text-sm text-orange-700">Tiempo Promedio</div>
+              <div className={`text-xs md:text-sm ${modoOscuro ? 'text-orange-300' : 'text-orange-700'}`}>Tiempo Promedio</div>
             </div>
             
-            <div className="bg-purple-50 p-3 md:p-4 rounded-lg text-center">
+            <div className={`${modoOscuro ? 'bg-purple-900' : 'bg-purple-50'} p-3 md:p-4 rounded-lg text-center`}>
               <Package className="w-6 h-6 md:w-8 md:h-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-lg md:text-2xl font-bold text-purple-900">
+              <div className={`text-lg md:text-2xl font-bold ${modoOscuro ? 'text-purple-100' : 'text-purple-900'}`}>
                 {estadisticasRepuestos.length}
               </div>
-              <div className="text-xs md:text-sm text-purple-700">Tipos de Repuestos</div>
+              <div className={`text-xs md:text-sm ${modoOscuro ? 'text-purple-300' : 'text-purple-700'}`}>Tipos de Repuestos</div>
             </div>
           </div>
         </div>

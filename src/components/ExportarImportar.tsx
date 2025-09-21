@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Upload, FileText, AlertTriangle, CheckCircle, Database, Archive } from 'lucide-react';
 import { dataService } from '../services/dataService';
+// import { getBackgroundClasses, getTextClasses, getSubTextClasses, getCardClasses, getBorderClasses, getButtonClasses, getInputClasses, getSelectClasses } from '../utils/colorUtils';
 
 interface ExportarImportarProps {
   modoOscuro?: boolean;
