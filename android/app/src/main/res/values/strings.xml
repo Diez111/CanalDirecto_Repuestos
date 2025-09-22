@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CanalDirecto Repuestos</string>
+    <string name="title_activity_main">CanalDirecto Repuestos</string>
+    <string name="package_name">com.canaldirecto.repuestos</string>
+    <string name="custom_url_scheme">com.canaldirecto.repuestos</string>
+</resources>
